@@ -116,7 +116,7 @@ $tahun_semasa = date("Y");
 <!-- Hero Section (dengan padding atas sebab navbar fixed) -->
 <section class="hero" style="padding-top: 120px;">
     <div class="container">
-        <h1>Sistem Bapak Aku SIRAT</h1>
+        <h1>Sistem Bapak Aku kacak</h1>
         <p class="lead mb-5">Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru</p>
        
         <div class="d-flex justify-content-center gap-4 flex-wrap">
