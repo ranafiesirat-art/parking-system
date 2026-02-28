@@ -50,7 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $catatan_siasatan = $_POST['catatan_siasatan'] ?? '';
     $tugasan = $_POST['tugasan'] ?? '';
     $ulasan_siasatan = $_POST['ulasan_siasatan'] ?? '';
-    $ulasan_pegawai = $_POST['ulasan_pegawai'] ?? '';  // <-- BARU: ambil dari POST
+    $ulasan_pegawai = $_POST['ulasan_pegawai'] ?? '';
+    $ulasan_pengarah = $_POST['ulasan_pengarah'] ?? '';
 
     // Pegawai bertanggungjawab diambil dari session (nama penuh), tak ambil dari POST
     $pegawai_bertanggungjawab = $_SESSION['nama_pegawai'] ?? $data['pegawai_bertanggungjawab'] ?? 'Sistem';
@@ -63,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $alamat_taman = $_POST['alamat_taman'] ?? '';
     $tarikh_mohon = $_POST['tarikh_mohon'] ?? null;
 
-    // Check duplicate custom_id (kecuali rekod sendiri)
+    // Check duplicate custom_id
     $duplicate_error = false;
     if ($custom_id !== '') {
         $check = $conn->prepare("SELECT id FROM permohonan WHERE custom_id = ? AND id != ?");
@@ -89,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 lokasi_jalan=?, no_petak=?, bil_petak=?, tempoh_sewa=?, nilai_sewa=?,
                 kedudukan_petak=?, jumlah_petak_sedia=?, tarikh_periksa=?,
                 doc_sokongan=?, jenis_bangunan=?, catatan_siasatan=?, tugasan=?,
-                ulasan_siasatan=?, ulasan_pegawai=?,  -- <-- BARU ditambah
+                ulasan_siasatan=?, ulasan_pegawai=?, ulasan_pengarah=?,
                 lesen_mbjb=?, no_ssm=?,
                 alamat_no=?, alamat_jalan=?, alamat_taman=?, tarikh_mohon=?,
                 pegawai_bertanggungjawab=?
@@ -97,12 +98,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         ");
 
         $update->bind_param(
-            "sssssssisissssssssssssssssi",
+            "sssssssisisssssssssssssssssi",
             $custom_id, $status, $syarikat, $pemohon, $no_tel,
             $lokasi_jalan, $no_petak, $bil_petak, $tempoh_sewa, $nilai_sewa,
             $kedudukan_petak, $jumlah_petak_sedia, $tarikh_periksa,
             $doc_sokongan, $jenis_bangunan, $catatan_siasatan, $tugasan,
-            $ulasan_siasatan, $ulasan_pegawai,   // <-- BARU
+            $ulasan_siasatan, $ulasan_pegawai, $ulasan_pengarah,
             $lesen_mbjb, $no_ssm,
             $alamat_no, $alamat_jalan, $alamat_taman, $tarikh_mohon,
             $pegawai_bertanggungjawab,
@@ -241,7 +242,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                             </div>
                         </div>
-
                         <!-- SECTION 2: Maklumat Petak & Sewaan -->
                         <div class="form-section">
                             <div class="section-title">Maklumat Petak & Sewaan</div>
@@ -316,7 +316,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                             </div>
                         </div>
-
                         <!-- SECTION 3: Alamat Lengkap -->
                         <div class="form-section">
                             <div class="section-title">Alamat Lengkap</div>
@@ -344,7 +343,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                             </div>
                         </div>
-
                         <!-- SECTION 4: Maklumat Pemeriksaan & Catatan -->
                         <div class="form-section">
                             <div class="section-title">Maklumat Pemeriksaan & Catatan</div>
@@ -376,15 +374,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="form-label fw-bold">Ulasan Siasatan</label>
                                 <textarea name="ulasan_siasatan" class="form-control"><?= htmlspecialchars($data['ulasan_siasatan'] ?? '') ?></textarea>
                             </div>
-
-                            <!-- BARU: Ulasan Pegawai (editable) -->
                             <div class="mt-4">
                                 <label class="form-label fw-bold">Ulasan Pegawai</label>
                                 <textarea name="ulasan_pegawai" class="form-control" rows="4"><?= htmlspecialchars($data['ulasan_pegawai'] ?? '') ?></textarea>
-                                <small class="text-muted">Ruang untuk ulasan/ komen pegawai bertanggungjawab (boleh diubah suai).</small>
                             </div>
-
-                            <!-- Pegawai Bertanggungjawab (readonly, auto dari session) -->
+                            <div class="mt-4">
+                                <label class="form-label fw-bold">Ulasan Pengarah</label>
+                                <textarea name="ulasan_pengarah" class="form-control" rows="4"><?= htmlspecialchars($data['ulasan_pengarah'] ?? '') ?></textarea>
+                            </div>
+                            <!-- Pegawai Bertanggungjawab (readonly) -->
                             <div class="mt-4">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="pegawai_bertanggungjawab"
@@ -393,7 +391,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                             </div>
                         </div>
-
                         <!-- Butang -->
                         <div class="d-flex gap-3 justify-content-end mt-5">
                             <a href="view.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-lg">
@@ -412,7 +409,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </div>
-
 <script>
 function kiraLive() {
     let bil = parseInt(document.getElementById("bil_petak").value) || 0;

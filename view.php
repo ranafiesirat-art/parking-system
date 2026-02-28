@@ -1,4 +1,3 @@
-
 <?php
 require_once 'vendor/autoload.php';
 use Dompdf\Dompdf;
@@ -45,7 +44,7 @@ if ($jum_petak_mohon > 0) {
 $nilai_sewa_display = $nilai_sewa > 0 ? "RM " . number_format($nilai_sewa, 2) : '(tiada)';
 
 // =============================================
-// EXPORT PDF - NAMA FAIL IKUT NAMA SYARIKAT (BAHAGIAN BARU DITAMBAH)
+// EXPORT PDF - dengan header HTTP untuk force download
 // =============================================
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $options = new Options();
@@ -53,14 +52,18 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $options->set('defaultFont', 'DejaVuSans');
     $dompdf = new Dompdf($options);
 
-    // === BAHAGIAN BARU: NAMAKAN FAIL PDF IKUT NAMA SYARIKAT ===
+    // Nama fail PDF ikut nama syarikat (sama seperti asal)
     $nama_syarikat_raw = trim($data['syarikat'] ?? 'Tiada_Nama_Syarikat');
-    $nama_syarikat = preg_replace('/[^A-Za-z0-9\- ]/', '_', $nama_syarikat_raw); // sanitize
+    $nama_syarikat = preg_replace('/[^A-Za-z0-9\- ]/', '_', $nama_syarikat_raw);
     $nama_syarikat = str_replace(' ', '_', $nama_syarikat);
-    $nama_syarikat = substr($nama_syarikat, 0, 50); // limit panjang
-
+    $nama_syarikat = substr($nama_syarikat, 0, 50);
     $filename = "Laporan_Pemeriksaan_" . $nama_syarikat . "_" . ($data['custom_id'] ?? $id) . "_" . date('Ymd_His') . ".pdf";
-    // === TAMAT BAHAGIAN BARU ===
+
+    // Tambah header HTTP untuk memaksa download
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: private, max-age=0, must-revalidate');
+    header('Pragma: public');
 
     ob_start();
     ?>
@@ -104,7 +107,6 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <div class="jabatan">JABATAN PENGUATKUASAAN - UNIT LETAK KERETA</div>
             <div class="tajuk">LAPORAN PEMERIKSAAN & SIASATAN TAPAK</div>
         </div>
-
         <table class="info-table">
             <tr><td class="label">No ID / Custom ID</td><td class="value"><?= htmlspecialchars($data['custom_id'] ?? $id) ?></td></tr>
             <tr><td class="label">Status Permohonan</td><td class="value"><?= htmlspecialchars($status) ?></td></tr>
@@ -114,7 +116,6 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <tr><td class="label">Tarikh Mohon</td><td class="value"><?= formatTarikh($data['tarikh_mohon']) ?></td></tr>
             <tr><td class="label">Bil Hari Sejak Mohon</td><td class="value"><?= $hariKe ?></td></tr>
         </table>
-
         <div class="section-title section-red">Maklumat Lokasi & Petak</div>
         <table class="info-table">
             <tr><td class="label">Lokasi Jalan</td><td class="value"><?= htmlspecialchars($lokasi_jalan_display) ?></td></tr>
@@ -127,28 +128,25 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <tr><td class="label">Jumlah Petak Sedia Ada</td><td class="value"><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '-') ?></td></tr>
             <tr><td class="label">Jenis Bangunan</td><td class="value"><?= htmlspecialchars($data['jenis_bangunan'] ?: '-') ?></td></tr>
         </table>
-
         <div class="section-title section-red">Maklumat Pemeriksaan</div>
         <table class="info-table">
             <tr><td class="label">Tarikh Periksa</td><td class="value"><?= formatTarikh($data['tarikh_periksa']) ?></td></tr>
             <tr><td class="label">Respon Hari Ke</td><td class="value"><?= $responHariKe ?></td></tr>
             <tr><td class="label">Dokumen Sokongan</td><td class="value"><?= htmlspecialchars($data['doc_sokongan'] ?: '-') ?></td></tr>
         </table>
-
         <div class="section-title section-red">Catatan & Ulasan</div>
         <div class="catatan">
             <strong>TUGASAN:</strong><br><?= nl2br(htmlspecialchars($data['tugasan'] ?: '-')) ?><br><br>
             <strong>CATATAN SIASTAN:</strong><br><?= nl2br(htmlspecialchars($data['catatan_siasatan'] ?: '-')) ?><br><br>
-            <strong>ULASAN SIASATAN:</strong><br><?= nl2br(htmlspecialchars($data['ulasan_siasatan'] ?: '-')) ?><br><br>
-            <strong>ULASAN PEGAWAI:</strong><br><?= nl2br(htmlspecialchars($data['pegawai'] ?: '-')) ?>
+            <strong>ULASAN SIASTAN:</strong><br><?= nl2br(htmlspecialchars($data['ulasan_siasatan'] ?: '-')) ?><br><br>
+            <strong>ULASAN PEGAWAI:</strong><br><?= nl2br(htmlspecialchars($data['ulasan_pegawai'] ?: '-')) ?><br><br>
+            <strong>ULASAN PENGARAH:</strong><br><?= nl2br(htmlspecialchars($data['ulasan_pengarah'] ?: '-')) ?>
         </div>
-
         <div class="stamp-container">
             <div class="stamp">
                 <div class="stamp-text">(TARIKH & CAP SYARIKAT)</div>
             </div>
         </div>
-
         <div class="footer">
             Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru<br>
             Dokumen rasmi untuk semakan di tapak sahaja.
@@ -157,6 +155,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     </html>
     <?php
     $html = ob_get_clean();
+
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
@@ -274,6 +273,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <div class="detail-row"><span class="detail-label">Tarikh Mohon</span><span class="detail-value"><?= formatTarikh($data['tarikh_mohon']) ?></span></div>
                         <div class="detail-row"><span class="detail-label">Bil Hari</span><span class="detail-value"><?= $hariKe ?: '(tiada)' ?></span></div>
                     </div>
+
                     <!-- Maklumat Lokasi & Alamat -->
                     <div class="section-card mt-5">
                         <div class="section-title">Maklumat Lokasi & Alamat</div>
@@ -281,6 +281,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <div class="detail-row"><span class="detail-label">Alamat Penuh</span><span class="detail-value"><?= htmlspecialchars($alamat_penuh) ?></span></div>
                         <div class="detail-row"><span class="detail-label">No Petak</span><span class="detail-value"><?= htmlspecialchars($data['no_petak'] ?: '(tiada)') ?></span></div>
                     </div>
+
                     <!-- Maklumat Petak & Sewaan -->
                     <div class="section-card mt-5">
                         <div class="section-title">Maklumat Petak & Sewaan</div>
@@ -291,6 +292,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <div class="detail-row"><span class="detail-label">Jumlah Petak Sedia</span><span class="detail-value"><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '(tiada)') ?></span></div>
                         <div class="detail-row"><span class="detail-label">Jenis Bangunan</span><span class="detail-value"><?= htmlspecialchars($data['jenis_bangunan'] ?: '(tiada)') ?></span></div>
                     </div>
+
                     <!-- Maklumat Pemeriksaan -->
                     <div class="section-card mt-5">
                         <div class="section-title">Maklumat Pemeriksaan</div>
@@ -298,15 +300,18 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                         <div class="detail-row"><span class="detail-label">Respon Hari Ke</span><span class="detail-value"><?= $responHariKe ?></span></div>
                         <div class="detail-row"><span class="detail-label">Dokumen Sokongan</span><span class="detail-value"><?= htmlspecialchars($data['doc_sokongan'] ?: '(tiada)') ?></span></div>
                     </div>
+
                     <!-- Catatan & Ulasan -->
                     <div class="section-card mt-5">
                         <div class="section-title">Catatan & Ulasan</div>
                         <div class="detail-row"><span class="detail-label">Tugasan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['tugasan'] ?: '(tiada)')) ?></div></div>
                         <div class="detail-row"><span class="detail-label">Catatan Siasatan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['catatan_siasatan'] ?: '(tiada)')) ?></div></div>
                         <div class="detail-row"><span class="detail-label">Ulasan Siasatan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_siasatan'] ?: '(tiada)')) ?></div></div>
-                        <div class="detail-row"><span class="detail-label">Ulasan Pegawai</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['pegawai'] ?: '(tiada)')) ?></div></div>
+                        <div class="detail-row"><span class="detail-label">Ulasan Pegawai</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pegawai'] ?: '(tiada)')) ?></div></div>
+                        <div class="detail-row"><span class="detail-label">Ulasan Pengarah</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pengarah'] ?: '(tiada)')) ?></div></div>
                     </div>
-                    <!-- Footer cetakan -->
+
+                    <!-- Footer cetakan (hanya untuk print) -->
                     <div class="print-only stamp-footer mt-5">
                         <div class="stamp-container">
                             <div class="stamp">
@@ -318,7 +323,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                             Dokumen rasmi untuk semakan di tapak sahaja.
                         </div>
                     </div>
-                    <!-- Butang web -->
+
+                    <!-- Butang web (termasuk Kemaskini) -->
                     <div class="text-end mt-5 no-print">
                         <a href="index.php" class="btn btn-outline-secondary me-2">Keluar</a>
                         <a href="edit.php?id=<?= $id ?>" class="btn btn-warning me-2">Kemaskini</a>
@@ -334,6 +340,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
