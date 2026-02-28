@@ -5,7 +5,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 include "db.php";
-$where = [];
+
 // =======================
 // AMBIL NILAI GET
 // =======================
@@ -20,16 +20,13 @@ $mohon_mula = $_GET['mohon_mula'] ?? '';
 $mohon_tamat = $_GET['mohon_tamat'] ?? '';
 
 // =======================
-// FILTER No ID / Custom ID - EXACT MATCH pada custom_id (primary key)
+// FILTER
 // =======================
+$where = [];
 if ($no_id != '') {
     $escaped = $conn->real_escape_string($no_id);
     $where[] = "custom_id = '$escaped'";
 }
-
-// =======================
-// FILTER TEXT LAIN
-// =======================
 if($syarikat != ''){
     $where[] = "syarikat LIKE '%".$conn->real_escape_string($syarikat)."%'";
 }
@@ -39,27 +36,19 @@ if($jalan != ''){
 if($taman != ''){
     $where[] = "alamat_taman LIKE '%".$conn->real_escape_string($taman)."%'";
 }
-// =======================
-// FILTER STATUS
-// =======================
 if(!empty($status)){
     $statusClean = array_map(function($s) use ($conn){
         return "'".$conn->real_escape_string($s)."'";
     }, $status);
     $where[] = "status IN (".implode(",", $statusClean).")";
 }
-// =======================
-// TARIKH PERIKSA
-// =======================
 if($periksa_mula != '' && $periksa_tamat != ''){
     $where[] = "tarikh_periksa BETWEEN '$periksa_mula' AND '$periksa_tamat'";
 }
-// =======================
-// TARIKH MOHON
-// =======================
 if($mohon_mula != '' && $mohon_tamat != ''){
     $where[] = "tarikh_mohon BETWEEN '$mohon_mula' AND '$mohon_tamat'";
 }
+
 // =======================
 // BUILD QUERY
 // =======================
@@ -83,14 +72,13 @@ while($row = $result->fetch_assoc()){
     } else {
         $tarikh_periksa_display = '<strong class="text-muted">BELUM PERIKSA</strong>';
     }
-
     $rows[] = [
         $bil++,
         htmlspecialchars($row['custom_id'] ?? $row['id']),
         $row['status'],
         htmlspecialchars($row['syarikat'] ?: '(tiada)'),
         $row['tarikh_mohon'] ? date('d/m/Y', strtotime($row['tarikh_mohon'])) : '(tiada)',
-        $tarikh_periksa_display,  // <-- PAPARAN BARU: "BELUM PERIKSA" untuk NULL/invalid
+        $tarikh_periksa_display,
         htmlspecialchars($row['no_petak'] ?: '(tiada)'),
         htmlspecialchars($row['lokasi_jalan'] ?: '(tiada)'),
         htmlspecialchars($row['alamat_taman'] ?: '(tiada)'),
@@ -292,7 +280,6 @@ while($row = $result->fetch_assoc()){
             </form>
         </div>
     </div>
-
     <!-- Table senarai -->
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
@@ -347,7 +334,6 @@ while($row = $result->fetch_assoc()){
         </div>
     </div>
 </div>
-
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -377,7 +363,7 @@ $(document).ready(function() {
         responsive: true,
         pageLength: 15,
         lengthMenu: [10, 15, 25, 50, 100],
-        order: [[7, 'asc']] // Urut ikut Taman
+        order: [[8, 'asc']] // Urut ikut Taman
     });
 });
 </script>
