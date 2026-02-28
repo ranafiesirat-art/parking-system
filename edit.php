@@ -5,10 +5,12 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 include "db.php";
+
 if (!isset($_GET['id'])) {
     die("ID tidak sah");
 }
 $id = intval($_GET['id']);
+
 /* ================= FETCH DATA ================= */
 $stmt = $conn->prepare("SELECT * FROM permohonan WHERE id=?");
 $stmt->bind_param("i", $id);
@@ -17,6 +19,7 @@ $data = $stmt->get_result()->fetch_assoc();
 if (!$data) {
     die("Data tidak dijumpai");
 }
+
 /* ================= FUNCTION AUTO KIRA ================= */
 function kiraNilaiSewa($bil, $tempoh) {
     if ($tempoh == "6 BULAN") {
@@ -26,6 +29,7 @@ function kiraNilaiSewa($bil, $tempoh) {
     }
     return 0;
 }
+
 /* ================= SIMPAN ================= */
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $custom_id = $_POST['custom_id'] ?? '';
@@ -46,7 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $catatan_siasatan = $_POST['catatan_siasatan'] ?? '';
     $tugasan = $_POST['tugasan'] ?? '';
     $ulasan_siasatan = $_POST['ulasan_siasatan'] ?? '';
-    
+    $ulasan_pegawai = $_POST['ulasan_pegawai'] ?? '';  // <-- BARU: ambil dari POST
+
     // Pegawai bertanggungjawab diambil dari session (nama penuh), tak ambil dari POST
     $pegawai_bertanggungjawab = $_SESSION['nama_pegawai'] ?? $data['pegawai_bertanggungjawab'] ?? 'Sistem';
 
@@ -58,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $alamat_taman = $_POST['alamat_taman'] ?? '';
     $tarikh_mohon = $_POST['tarikh_mohon'] ?? null;
 
-    // Check duplicate custom_id
+    // Check duplicate custom_id (kecuali rekod sendiri)
     $duplicate_error = false;
     if ($custom_id !== '') {
         $check = $conn->prepare("SELECT id FROM permohonan WHERE custom_id = ? AND id != ?");
@@ -84,25 +89,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 lokasi_jalan=?, no_petak=?, bil_petak=?, tempoh_sewa=?, nilai_sewa=?,
                 kedudukan_petak=?, jumlah_petak_sedia=?, tarikh_periksa=?,
                 doc_sokongan=?, jenis_bangunan=?, catatan_siasatan=?, tugasan=?,
-                ulasan_siasatan=?, pegawai=?, lesen_mbjb=?, no_ssm=?,
+                ulasan_siasatan=?, ulasan_pegawai=?,  -- <-- BARU ditambah
+                lesen_mbjb=?, no_ssm=?,
                 alamat_no=?, alamat_jalan=?, alamat_taman=?, tarikh_mohon=?,
                 pegawai_bertanggungjawab=?
             WHERE id=?
         ");
+
         $update->bind_param(
             "sssssssisissssssssssssssssi",
             $custom_id, $status, $syarikat, $pemohon, $no_tel,
             $lokasi_jalan, $no_petak, $bil_petak, $tempoh_sewa, $nilai_sewa,
             $kedudukan_petak, $jumlah_petak_sedia, $tarikh_periksa,
             $doc_sokongan, $jenis_bangunan, $catatan_siasatan, $tugasan,
-            $ulasan_siasatan, $pegawai, $lesen_mbjb, $no_ssm,
+            $ulasan_siasatan, $ulasan_pegawai,   // <-- BARU
+            $lesen_mbjb, $no_ssm,
             $alamat_no, $alamat_jalan, $alamat_taman, $tarikh_mohon,
             $pegawai_bertanggungjawab,
             $id
         );
-        $update->execute();
-        header("Location: view.php?id=" . $id);
-        exit;
+
+        if ($update->execute()) {
+            header("Location: view.php?id=" . $id);
+            exit;
+        } else {
+            echo '<div class="alert alert-danger">Ralat semasa kemaskini: ' . $update->error . '</div>';
+        }
+        $update->close();
     }
 }
 ?>
@@ -363,7 +376,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="form-label fw-bold">Ulasan Siasatan</label>
                                 <textarea name="ulasan_siasatan" class="form-control"><?= htmlspecialchars($data['ulasan_siasatan'] ?? '') ?></textarea>
                             </div>
-                            <!-- Pegawai Bertanggungjawab (readonly, auto dari session nama penuh) -->
+
+                            <!-- BARU: Ulasan Pegawai (editable) -->
+                            <div class="mt-4">
+                                <label class="form-label fw-bold">Ulasan Pegawai</label>
+                                <textarea name="ulasan_pegawai" class="form-control" rows="4"><?= htmlspecialchars($data['ulasan_pegawai'] ?? '') ?></textarea>
+                                <small class="text-muted">Ruang untuk ulasan/ komen pegawai bertanggungjawab (boleh diubah suai).</small>
+                            </div>
+
+                            <!-- Pegawai Bertanggungjawab (readonly, auto dari session) -->
                             <div class="mt-4">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="pegawai_bertanggungjawab"
@@ -397,13 +418,11 @@ function kiraLive() {
     let bil = parseInt(document.getElementById("bil_petak").value) || 0;
     let tempoh = document.getElementById("tempoh_sewa").value;
     let nilai = 0;
-
     if (tempoh === "6 BULAN") {
         nilai = bil * 900;
     } else if (tempoh === "12 BULAN") {
         nilai = bil * 1800;
     }
-
     document.getElementById("nilai_sewa").value = "RM " + nilai.toLocaleString('ms-MY', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
