@@ -103,96 +103,61 @@ $bakiBelumQuery = "
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// DATA UNTUK CHART & STATUS COUNT
+// Kira peratusan siap pemeriksaan dalam bulan yang sama
+// =======================
+$selesaiBulanSama = $jumlahSame;
+$totalPermohonanBulan = $totalPermohonan;
+$peratusSelesai = ($totalPermohonanBulan > 0) ? round(($selesaiBulanSama / $totalPermohonanBulan) * 100, 1) : 0;
+
+// =======================
+// DATA UNTUK CHART & STATUS COUNT (kekal)
 // =======================
 $statusCounts = [];
-
-// BELUM (kekal)
 $statusCounts['BELUM'] = $conn->query("
     SELECT COUNT(*) as jumlah FROM permohonan
     WHERE $where
     AND status = 'BELUM'
-    AND (tarikh_periksa IS NULL
-         OR tarikh_periksa = ''
-         OR tarikh_periksa = '0000-00-00'
-         OR tarikh_periksa = '0000-00-00 00:00:00')
+    AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')
 ")->fetch_assoc()['jumlah'] ?? 0;
 
-// Base query untuk status diproses
-$base_query = "
-    SELECT COUNT(*) as jumlah FROM permohonan
-    WHERE $where
-    AND tarikh_periksa IS NOT NULL";
+$base_query = "SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND tarikh_periksa IS NOT NULL";
 
-// CHECKED
 $statusCounts['CHECKED'] = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
-
-// ENDORSED
 $statusCounts['ENDORSED'] = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
-
-// APPROVED
 $statusCounts['APPROVED'] = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
-
-// REJECTED
 $statusCounts['REJECTED'] = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
-
-// ACTIVE
 $statusCounts['ACTIVE'] = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
-
-// KIV
 $statusCounts['KIV'] = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
 
-// INCOMPLETED - total keseluruhan (kekal untuk rujukan)
-$incompleteTotal = $conn->query("
-    SELECT COUNT(*) as jumlah FROM permohonan
-    WHERE $where
-    AND status = 'INCOMPLETE'
-")->fetch_assoc()['jumlah'] ?? 0;
-
-// INCOMPLETED dengan tarikh_periksa NULL
-$incompleteNull = $conn->query("
-    SELECT COUNT(*) as jumlah FROM permohonan
-    WHERE $where
-    AND status = 'INCOMPLETE'
-    AND (tarikh_periksa IS NULL
-         OR tarikh_periksa = ''
-         OR tarikh_periksa = '0000-00-00'
-         OR tarikh_periksa = '0000-00-00 00:00:00')
-")->fetch_assoc()['jumlah'] ?? 0;
-
-// INCOMPLETED dengan tarikh_periksa ADA
+$incompleteTotal = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE'")->fetch_assoc()['jumlah'] ?? 0;
+$incompleteNull = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
 $incompleteAda = $incompleteTotal - $incompleteNull;
 
-// Masukkan ke statusCounts (untuk label & total keseluruhan)
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
 
 // =======================
-// WARNA STATUS (kekal, tapi INCOMPLETE tak guna lagi sebab pecah dua)
+// WARNA STATUS (kekal)
 // =======================
 $statusColors = [
-    "APPROVED"    => "#10b981",
-    "REJECTED"    => "#ef4444",
-    "CHECKED"     => "#0ea5e9",
-    "KIV"         => "#f59e0b",
-    "BELUM"       => "#64748b",
-    "ACTIVE"      => "#3b82f6",
-    "ENDORSED"    => "#8b5cf6",
-    "INCOMPLETE"  => "#f97316" // warna default, tapi tak guna lagi sebab dataset pecah
+    "APPROVED" => "#10b981",
+    "REJECTED" => "#ef4444",
+    "CHECKED" => "#0ea5e9",
+    "KIV" => "#f59e0b",
+    "BELUM" => "#64748b",
+    "ACTIVE" => "#3b82f6",
+    "ENDORSED" => "#8b5cf6",
+    "INCOMPLETE" => "#f97316"
 ];
 ?>
-
 <!DOCTYPE html>
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Sistem Permohonan Petak Bermusim</title>
-  
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
     <style>
         :root { --primary:#0d6efd; --success:#198754; --info:#0dcaf0; --warning:#ffc107; --danger:#dc3545; --dark:#212529; --light-bg:#f0f4f8; }
         body { background:var(--light-bg); min-height:100vh; font-family:'Segoe UI',system-ui,sans-serif; }
@@ -206,7 +171,6 @@ $statusColors = [
     </style>
 </head>
 <body>
-
 <!-- Sidebar (kekal) -->
 <nav class="sidebar d-none d-lg-block">
     <div class="text-center mb-4">
@@ -217,7 +181,6 @@ $statusColors = [
         <li class="nav-item"><a href="add.php" class="nav-link"><i class="bi bi-journal-plus me-2"></i>Permohonan Baru</a></li>
         <li class="nav-item"><a href="senarai.php" class="nav-link"><i class="bi bi-list-check me-2"></i>Senarai Permohonan</a></li>
         <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-person-badge me-2"></i>Pegawai</a></li>
-        
         <li class="nav-item mt-auto">
             <a href="index.php" class="nav-link text-primary fw-bold">
                 <i class="bi bi-arrow-left-circle me-2"></i>Kembali ke Halaman Utama
@@ -256,7 +219,7 @@ $statusColors = [
             </div>
         </div>
 
-        <!-- KPI Cards - 8 card (kekal) -->
+        <!-- KPI Cards -->
         <div class="row g-4 mb-5">
             <div class="col-md-3 col-sm-6">
                 <div class="card card-kpi bg-white">
@@ -294,6 +257,7 @@ $statusColors = [
                     </div>
                 </div>
             </div>
+
             <div class="col-md-4 col-sm-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -321,6 +285,7 @@ $statusColors = [
                     </div>
                 </div>
             </div>
+
             <div class="col-md-4 col-sm-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -330,9 +295,21 @@ $statusColors = [
                     </div>
                 </div>
             </div>
+
+            <!-- Card Peratusan Siap Pemeriksaan (dengan % betul) -->
+            <div class="col-md-4 col-sm-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle-fill fs-1 text-success mb-2"></i>
+                        <h6 class="text-muted">Peratusan Siap Pemeriksaan (<?= $labelBulan ?>)</h6>
+                        <div class="counter text-success" data-target="<?= $peratusSelesai ?>" data-is-percent="true"><?= $peratusSelesai ?>%</div>
+                        <small class="text-muted">(daripada <?= number_format($totalPermohonanBulan) ?> permohonan)</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Charts Row -->
+        <!-- Charts Row (kekal) -->
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="chart-container">
@@ -357,16 +334,16 @@ $statusColors = [
 </div>
 
 <script>
-// Data untuk chart
+// Data untuk chart (kekal)
 const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
 
-// Khusus untuk INCOMPLETE - pecah dua dataset
+// Khusus untuk INCOMPLETE
 const incompleteNull = <?= $incompleteNull ?>;
 const incompleteAda = <?= $incompleteAda ?>;
 
-// Chart 1: Horizontal Bar - Status (dengan INCOMPLETE pecah dua warna)
+// Chart 1: Horizontal Bar - Status
 new Chart(document.getElementById('statusBarChart'), {
     type: 'bar',
     data: {
@@ -378,37 +355,27 @@ new Chart(document.getElementById('statusBarChart'), {
                 backgroundColor: colors.map((c, idx) => idx === statusLabels.indexOf('INCOMPLETE') ? '#f97316' : c),
                 borderWidth: 0,
                 borderRadius: 8,
-                stack: 'incomplete' // stack untuk INCOMPLETE
+                stack: 'incomplete'
             },
             {
                 label: 'INCOMPLETE (Ada Tarikh Periksa)',
                 data: statusValues.map((val, idx) => idx === statusLabels.indexOf('INCOMPLETE') ? incompleteAda : 0),
-                backgroundColor: '#ffc107', // kuning cerah
+                backgroundColor: '#ffc107',
                 borderWidth: 0,
                 borderRadius: 8,
-                stack: 'incomplete' // stack sama supaya jadi satu bar
+                stack: 'incomplete'
             }
         ]
     },
     options: {
         indexAxis: 'y',
         responsive: true,
-        plugins: {
-            legend: { display: false } // sembunyi legend supaya tak keliru
-        },
-        scales: {
-            x: {
-                beginAtZero: true,
-                stacked: true // aktifkan stacking
-            },
-            y: {
-                stacked: true
-            }
-        }
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, stacked: true }, y: { stacked: true } }
     }
 });
 
-// Chart 2: Pie - Pecahan Petak (kekal)
+// Chart 2: Pie - Pecahan Petak
 new Chart(document.getElementById('petakPieChart'), {
     type: 'pie',
     data: {
@@ -429,7 +396,7 @@ new Chart(document.getElementById('petakPieChart'), {
     }
 });
 
-// Chart 3: Line - Trend (kekal)
+// Chart 3: Line - Trend (simulasi kekal)
 new Chart(document.getElementById('trendLineChart'), {
     type: 'line',
     data: {
@@ -445,19 +412,31 @@ new Chart(document.getElementById('trendLineChart'), {
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
 });
 
-// Counter animation (kekal)
+// Counter animation (diubah sikit untuk handle %)
 document.querySelectorAll('.counter').forEach(el => {
     const target = parseFloat(el.getAttribute('data-target'));
-    let count = 0; const duration = 1500; const step = target / (duration / 16);
+    const isPercent = el.getAttribute('data-is-percent') === 'true';
+    let count = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+
     function update() {
         count += step;
-        if (count < target) { el.textContent = Math.ceil(count).toLocaleString('ms-MY'); requestAnimationFrame(update); }
-        else { el.textContent = target.toLocaleString('ms-MY'); }
+        if (count < target) {
+            el.textContent = Math.ceil(count).toLocaleString('ms-MY');
+            requestAnimationFrame(update);
+        } else {
+            // Akhir animation: tambah % kalau card peratusan
+            if (isPercent) {
+                el.textContent = target.toLocaleString('ms-MY') + '%';
+            } else {
+                el.textContent = target.toLocaleString('ms-MY');
+            }
+        }
     }
     update();
 });
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
