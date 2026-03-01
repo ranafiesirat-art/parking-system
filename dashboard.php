@@ -5,11 +5,12 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 include "db.php";
+
 $tahun = $_GET['tahun'] ?? date("Y");
 $bulan = $_GET['bulan'] ?? "SETAHUN";
 
 // =======================
-// Label dinamik (kekal)
+// Label dinamik
 // =======================
 $labelBulan = ($bulan == "SETAHUN") ? "Setahun" : date("F", mktime(0,0,0,$bulan,1));
 $labelKeseluruhan = "Jumlah Keseluruhan Premis yang diperiksa pada $labelBulan";
@@ -17,7 +18,7 @@ $labelPermohonanBulan = "Jumlah Premis yang diperiksa (Permohonan $labelBulan)";
 $labelPermohonanLain = "Jumlah Premis yang diperiksa (Permohonan Selain $labelBulan)";
 
 // =======================
-// WHERE CLAUSE UTAMA
+// WHERE CLAUSE UTAMA (berdasarkan tarikh_mohon)
 // =======================
 $where = "YEAR(tarikh_mohon) = '$tahun'";
 if ($bulan != "SETAHUN") {
@@ -59,7 +60,7 @@ AND $where";
 $respon = $conn->query($responQuery)->fetch_assoc()['purata'] ?? 0;
 
 // =======================
-// KPI 5,6,7
+// KPI 5,6,7 → masih kekal logik asal (untuk label Permohonan Bulan / Lain)
 // =======================
 $where_same = "YEAR(tarikh_mohon) = '$tahun'
                AND YEAR(tarikh_periksa) = '$tahun'
@@ -103,14 +104,23 @@ $bakiBelumQuery = "
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// Kira peratusan siap pemeriksaan dalam bulan yang sama
+// Peratusan Siap Pemeriksaan – UBAH: hanya semak ada tarikh_periksa sahaja
 // =======================
-$selesaiBulanSama = $jumlahSame;
+$selesaiQuery = "
+    SELECT COUNT(*) as jumlah FROM permohonan
+    WHERE $where
+    AND tarikh_periksa IS NOT NULL
+    AND tarikh_periksa != ''
+    AND tarikh_periksa != '0000-00-00'
+    AND tarikh_periksa != '0000-00-00 00:00:00'
+";
+$jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;
+
 $totalPermohonanBulan = $totalPermohonan;
-$peratusSelesai = ($totalPermohonanBulan > 0) ? round(($selesaiBulanSama / $totalPermohonanBulan) * 100, 1) : 0;
+$peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
 
 // =======================
-// DATA UNTUK CHART & STATUS COUNT (kekal)
+// DATA UNTUK CHART & STATUS COUNT
 // =======================
 $statusCounts = [];
 $statusCounts['BELUM'] = $conn->query("
@@ -121,34 +131,33 @@ $statusCounts['BELUM'] = $conn->query("
 ")->fetch_assoc()['jumlah'] ?? 0;
 
 $base_query = "SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND tarikh_periksa IS NOT NULL";
-
-$statusCounts['CHECKED'] = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ENDORSED'] = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['APPROVED'] = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['REJECTED'] = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ACTIVE'] = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['KIV'] = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['CHECKED']   = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ENDORSED']  = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['APPROVED']  = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['REJECTED']  = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ACTIVE']    = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['KIV']       = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
 
 $incompleteTotal = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE'")->fetch_assoc()['jumlah'] ?? 0;
-$incompleteNull = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
-$incompleteAda = $incompleteTotal - $incompleteNull;
-
+$incompleteNull  = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
+$incompleteAda   = $incompleteTotal - $incompleteNull;
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
 
 // =======================
-// WARNA STATUS (kekal)
+// WARNA STATUS
 // =======================
 $statusColors = [
-    "APPROVED" => "#10b981",
-    "REJECTED" => "#ef4444",
-    "CHECKED" => "#0ea5e9",
-    "KIV" => "#f59e0b",
-    "BELUM" => "#64748b",
-    "ACTIVE" => "#3b82f6",
-    "ENDORSED" => "#8b5cf6",
-    "INCOMPLETE" => "#f97316"
+    "APPROVED"  => "#10b981",
+    "REJECTED"  => "#ef4444",
+    "CHECKED"   => "#0ea5e9",
+    "KIV"       => "#f59e0b",
+    "BELUM"     => "#64748b",
+    "ACTIVE"    => "#3b82f6",
+    "ENDORSED"  => "#8b5cf6",
+    "INCOMPLETE"=> "#f97316"
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="ms">
 <head>
@@ -171,7 +180,8 @@ $statusColors = [
     </style>
 </head>
 <body>
-<!-- Sidebar (kekal) -->
+
+<!-- Sidebar -->
 <nav class="sidebar d-none d-lg-block">
     <div class="text-center mb-4">
         <h4 class="fw-bold text-primary"><i class="bi bi-parking-fill me-2"></i>Parking Admin</h4>
@@ -285,7 +295,6 @@ $statusColors = [
                     </div>
                 </div>
             </div>
-
             <div class="col-md-4 col-sm-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -296,20 +305,20 @@ $statusColors = [
                 </div>
             </div>
 
-            <!-- Card Peratusan Siap Pemeriksaan (dengan % betul) -->
+            <!-- Card Peratusan Siap Pemeriksaan (dikemaskini) -->
             <div class="col-md-4 col-sm-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
                         <i class="bi bi-check-circle-fill fs-1 text-success mb-2"></i>
                         <h6 class="text-muted">Peratusan Siap Pemeriksaan (<?= $labelBulan ?>)</h6>
                         <div class="counter text-success" data-target="<?= $peratusSelesai ?>" data-is-percent="true"><?= $peratusSelesai ?>%</div>
-                        <small class="text-muted">(daripada <?= number_format($totalPermohonanBulan) ?> permohonan)</small>
+                        <small class="text-muted">(<?= number_format($jumlahSelesai) ?> daripada <?= number_format($totalPermohonanBulan) ?> permohonan)</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Row (kekal) -->
+        <!-- Charts Row -->
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="chart-container">
@@ -334,7 +343,7 @@ $statusColors = [
 </div>
 
 <script>
-// Data untuk chart (kekal)
+// Data untuk chart
 const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
@@ -396,7 +405,7 @@ new Chart(document.getElementById('petakPieChart'), {
     }
 });
 
-// Chart 3: Line - Trend (simulasi kekal)
+// Chart 3: Line - Trend (simulasi)
 new Chart(document.getElementById('trendLineChart'), {
     type: 'line',
     data: {
@@ -412,21 +421,19 @@ new Chart(document.getElementById('trendLineChart'), {
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
 });
 
-// Counter animation (diubah sikit untuk handle %)
+// Counter animation (handle % juga)
 document.querySelectorAll('.counter').forEach(el => {
     const target = parseFloat(el.getAttribute('data-target'));
     const isPercent = el.getAttribute('data-is-percent') === 'true';
     let count = 0;
     const duration = 1500;
     const step = target / (duration / 16);
-
     function update() {
         count += step;
         if (count < target) {
             el.textContent = Math.ceil(count).toLocaleString('ms-MY');
             requestAnimationFrame(update);
         } else {
-            // Akhir animation: tambah % kalau card peratusan
             if (isPercent) {
                 el.textContent = target.toLocaleString('ms-MY') + '%';
             } else {
