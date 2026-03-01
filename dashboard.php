@@ -18,7 +18,7 @@ $labelPermohonanBulan = "Jumlah Premis yang diperiksa (Permohonan $labelBulan)";
 $labelPermohonanLain = "Jumlah Premis yang diperiksa (Permohonan Selain $labelBulan)";
 
 // =======================
-// WHERE CLAUSE UTAMA (berdasarkan tarikh_mohon)
+// WHERE CLAUSE UTAMA
 // =======================
 $where = "YEAR(tarikh_mohon) = '$tahun'";
 if ($bulan != "SETAHUN") {
@@ -26,7 +26,7 @@ if ($bulan != "SETAHUN") {
 }
 
 // =======================
-// STATUS + PETAK + NILAI (KPI asal)
+// STATUS + PETAK + NILAI
 // =======================
 $query = "
 SELECT
@@ -60,7 +60,7 @@ AND $where";
 $respon = $conn->query($responQuery)->fetch_assoc()['purata'] ?? 0;
 
 // =======================
-// KPI 5,6,7 → masih kekal logik asal (untuk label Permohonan Bulan / Lain)
+// KPI 5,6,7
 // =======================
 $where_same = "YEAR(tarikh_mohon) = '$tahun'
                AND YEAR(tarikh_periksa) = '$tahun'
@@ -104,7 +104,7 @@ $bakiBelumQuery = "
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// Peratusan Siap Pemeriksaan – UBAH: hanya semak ada tarikh_periksa sahaja
+// Peratusan Siap Pemeriksaan
 // =======================
 $selesaiQuery = "
     SELECT COUNT(*) as jumlah FROM permohonan
@@ -120,7 +120,7 @@ $totalPermohonanBulan = $totalPermohonan;
 $peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
 
 // =======================
-// DATA UNTUK CHART & STATUS COUNT
+// STATUS COUNTS & CHART DATA
 // =======================
 $statusCounts = [];
 $statusCounts['BELUM'] = $conn->query("
@@ -143,9 +143,6 @@ $incompleteNull  = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE
 $incompleteAda   = $incompleteTotal - $incompleteNull;
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
 
-// =======================
-// WARNA STATUS
-// =======================
 $statusColors = [
     "APPROVED"  => "#10b981",
     "REJECTED"  => "#ef4444",
@@ -175,13 +172,14 @@ $statusColors = [
         .card-kpi { border:none; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.06); transition:transform 0.3s; }
         .card-kpi:hover { transform:translateY(-5px); }
         .counter { font-size:2.5rem; font-weight:700; color:var(--primary); }
+        .counter-sewaan { font-size:2.2rem; } /* saiz lebih kecil khas untuk nilai sewaan */
         .chart-container { background:white; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.06); padding:1.5rem; }
         @media (max-width:992px) { .sidebar { position:relative; height:auto; width:100%; } .main-content { margin-left:0; } }
     </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- Sidebar (kekal) -->
 <nav class="sidebar d-none d-lg-block">
     <div class="text-center mb-4">
         <h4 class="fw-bold text-primary"><i class="bi bi-parking-fill me-2"></i>Parking Admin</h4>
@@ -253,8 +251,10 @@ $statusColors = [
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
                         <i class="bi bi-currency-dollar fs-1 text-warning mb-2"></i>
-                        <h6 class="text-muted">Anggaran Nilai Sewaan (RM)</h6>
-                        <div class="counter" data-target="<?= $totalNilai ?>">RM <?= number_format($totalNilai, 0) ?></div>
+                        <h6 class="text-muted">Anggaran Nilai Sewaan</h6>
+                        <div class="counter counter-sewaan" data-target="<?= $totalNilai ?>">
+                            RM <?= number_format($totalNilai, 2) ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -305,7 +305,6 @@ $statusColors = [
                 </div>
             </div>
 
-            <!-- Card Peratusan Siap Pemeriksaan (dikemaskini) -->
             <div class="col-md-4 col-sm-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -318,7 +317,7 @@ $statusColors = [
             </div>
         </div>
 
-        <!-- Charts Row -->
+        <!-- Charts Row (kekal) -->
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="chart-container">
@@ -348,11 +347,10 @@ const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
 
-// Khusus untuk INCOMPLETE
 const incompleteNull = <?= $incompleteNull ?>;
 const incompleteAda = <?= $incompleteAda ?>;
 
-// Chart 1: Horizontal Bar - Status
+// Chart configurations (kekal sama seperti sebelumnya)
 new Chart(document.getElementById('statusBarChart'), {
     type: 'bar',
     data: {
@@ -384,7 +382,6 @@ new Chart(document.getElementById('statusBarChart'), {
     }
 });
 
-// Chart 2: Pie - Pecahan Petak
 new Chart(document.getElementById('petakPieChart'), {
     type: 'pie',
     data: {
@@ -405,7 +402,6 @@ new Chart(document.getElementById('petakPieChart'), {
     }
 });
 
-// Chart 3: Line - Trend (simulasi)
 new Chart(document.getElementById('trendLineChart'), {
     type: 'line',
     data: {
@@ -421,13 +417,14 @@ new Chart(document.getElementById('trendLineChart'), {
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
 });
 
-// Counter animation (handle % juga)
+// Counter animation (dengan penyesuaian untuk nilai sewaan)
 document.querySelectorAll('.counter').forEach(el => {
     const target = parseFloat(el.getAttribute('data-target'));
     const isPercent = el.getAttribute('data-is-percent') === 'true';
     let count = 0;
     const duration = 1500;
     const step = target / (duration / 16);
+
     function update() {
         count += step;
         if (count < target) {
@@ -436,6 +433,8 @@ document.querySelectorAll('.counter').forEach(el => {
         } else {
             if (isPercent) {
                 el.textContent = target.toLocaleString('ms-MY') + '%';
+            } else if (el.classList.contains('counter-sewaan')) {
+                el.textContent = 'RM ' + Number(target).toLocaleString('ms-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             } else {
                 el.textContent = target.toLocaleString('ms-MY');
             }
