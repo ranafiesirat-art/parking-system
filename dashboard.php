@@ -60,7 +60,7 @@ AND $where";
 $respon = $conn->query($responQuery)->fetch_assoc()['purata'] ?? 0;
 
 // =======================
-// Jumlah diperiksa berdasarkan tarikh_periksa (untuk card lain)
+// Jumlah diperiksa berdasarkan tarikh_periksa
 // =======================
 $where_same = "YEAR(tarikh_mohon) = '$tahun' AND YEAR(tarikh_periksa) = '$tahun' AND tarikh_periksa IS NOT NULL";
 if ($bulan != "SETAHUN") {
@@ -83,7 +83,7 @@ if ($bulan != "SETAHUN") {
 $jumlahKeseluruhan = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where_keseluruhan")->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// Baki Premis Belum Diperiksa (permohonan bulan ini)
+// Baki Premis Belum Diperiksa
 // =======================
 $bakiBelumQuery = "
     SELECT COUNT(*) as jumlah FROM permohonan
@@ -93,7 +93,7 @@ $bakiBelumQuery = "
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// Jumlah Telah Diperiksa = permohonan bulan ini YANG SUDAH ADA tarikh_periksa (tak kira bila diperiksa)
+// Jumlah Telah Diperiksa = permohonan bulan ini yang sudah ada tarikh_periksa
 // =======================
 $selesaiQuery = "
     SELECT COUNT(*) as jumlah FROM permohonan
@@ -103,13 +103,13 @@ $selesaiQuery = "
     AND tarikh_periksa != '0000-00-00'
     AND tarikh_periksa != '0000-00-00 00:00:00'
 ";
-$jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;  // <--- ini nilai untuk card baru
+$jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 $totalPermohonanBulan = $totalPermohonan;
 $peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
 
 // =======================
-// STATUS COUNTS & CHART DATA (kekal)
+// STATUS COUNTS & CHART DATA
 // =======================
 $statusCounts = [];
 $statusCounts['BELUM'] = $conn->query("
@@ -133,9 +133,14 @@ $incompleteAda = $incompleteTotal - $incompleteNull;
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
 
 $statusColors = [
-    "APPROVED" => "#10b981", "REJECTED" => "#ef4444", "CHECKED" => "#0ea5e9",
-    "KIV" => "#f59e0b", "BELUM" => "#64748b", "ACTIVE" => "#3b82f6",
-    "ENDORSED" => "#8b5cf6", "INCOMPLETE"=> "#f97316"
+    "APPROVED" => "#10b981",
+    "REJECTED" => "#ef4444",
+    "CHECKED" => "#0ea5e9",
+    "KIV" => "#f59e0b",
+    "BELUM" => "#64748b",
+    "ACTIVE" => "#3b82f6",
+    "ENDORSED" => "#8b5cf6",
+    "INCOMPLETE"=> "#f97316"
 ];
 ?>
 <!DOCTYPE html>
@@ -326,7 +331,7 @@ $statusColors = [
 
         </div>
 
-        <!-- Charts Row (kekal) -->
+        <!-- Charts Row – DIKEMBALIKAN -->
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="chart-container">
@@ -351,22 +356,105 @@ $statusColors = [
 </div>
 
 <script>
-// ... (script chart & counter animation kekal sama seperti sebelumnya)
-// Tak perlu ubah bahagian script kerana nilai hanya diubah di PHP & HTML card
-// Copy je dari versi sebelum ni jika perlu
+// Data untuk chart
 const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
 const incompleteNull = <?= $incompleteNull ?>;
 const incompleteAda = <?= $incompleteAda ?>;
 
-// Chart & animation code (sama seperti sebelum)
-new Chart(document.getElementById('statusBarChart'), { /* ... */ });
-new Chart(document.getElementById('petakPieChart'), { /* ... */ });
-new Chart(document.getElementById('trendLineChart'), { /* ... */ });
+// Chart 1: Taburan Status Permohonan (Bar Horizontal)
+new Chart(document.getElementById('statusBarChart'), {
+    type: 'bar',
+    data: {
+        labels: statusLabels,
+        datasets: [
+            {
+                label: 'Jumlah Permohonan',
+                data: statusValues.map((val, idx) => idx === statusLabels.indexOf('INCOMPLETE') ? incompleteNull : val),
+                backgroundColor: colors.map((c, idx) => idx === statusLabels.indexOf('INCOMPLETE') ? '#f97316' : c),
+                borderWidth: 0,
+                borderRadius: 8,
+                stack: 'incomplete'
+            },
+            {
+                label: 'INCOMPLETE (Ada Tarikh Periksa)',
+                data: statusValues.map((val, idx) => idx === statusLabels.indexOf('INCOMPLETE') ? incompleteAda : 0),
+                backgroundColor: '#ffc107',
+                borderWidth: 0,
+                borderRadius: 8,
+                stack: 'incomplete'
+            }
+        ]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, stacked: true }, y: { stacked: true } }
+    }
+});
 
+// Chart 2: Pecahan Petak Mengikut Status (Pie)
+new Chart(document.getElementById('petakPieChart'), {
+    type: 'pie',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            data: <?= json_encode(array_column($statusData, 'jumlah_petak')) ?>,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} petak` } }
+        }
+    }
+});
+
+// Chart 3: Trend Permohonan (Line – simulasi)
+new Chart(document.getElementById('trendLineChart'), {
+    type: 'line',
+    data: {
+        labels: ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'],
+        datasets: [{
+            label: 'Permohonan Bulanan',
+            data: [12,19,15,25,30,22,18,28,35,40,32,45],
+            borderColor: 'var(--primary)',
+            tension: 0.4,
+            fill: false
+        }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+});
+
+// Counter animation
 document.querySelectorAll('.counter').forEach(el => {
-    // ... animation code sama
+    const target = parseFloat(el.getAttribute('data-target'));
+    const isPercent = el.getAttribute('data-is-percent') === 'true';
+    let count = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    function update() {
+        count += step;
+        if (count < target) {
+            el.textContent = Math.ceil(count).toLocaleString('ms-MY');
+            requestAnimationFrame(update);
+        } else {
+            if (isPercent) {
+                el.textContent = target.toLocaleString('ms-MY') + '%';
+            } else if (el.classList.contains('counter-sewaan')) {
+                el.textContent = 'RM ' + Number(target).toLocaleString('ms-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            } else {
+                el.textContent = target.toLocaleString('ms-MY');
+            }
+        }
+    }
+    update();
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
