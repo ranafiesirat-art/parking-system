@@ -5,10 +5,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 include "db.php";
-
 $tahun = $_GET['tahun'] ?? date("Y");
 $bulan = $_GET['bulan'] ?? "SETAHUN";
-
 // =======================
 // Label dinamik
 // =======================
@@ -16,7 +14,6 @@ $labelBulan = ($bulan == "SETAHUN") ? "Setahun" : date("F", mktime(0,0,0,$bulan,
 $labelKeseluruhan = "Jumlah Keseluruhan Premis yang diperiksa pada $labelBulan";
 $labelPermohonanBulan = "Jumlah Premis yang diperiksa (Permohonan $labelBulan)";
 $labelPermohonanLain = "Jumlah Premis yang diperiksa (Permohonan Selain $labelBulan)";
-
 // =======================
 // WHERE CLAUSE UTAMA
 // =======================
@@ -24,7 +21,6 @@ $where = "YEAR(tarikh_mohon) = '$tahun'";
 if ($bulan != "SETAHUN") {
     $where .= " AND MONTH(tarikh_mohon) = '$bulan'";
 }
-
 // =======================
 // STATUS + PETAK + NILAI
 // =======================
@@ -48,7 +44,6 @@ while($row = $result->fetch_assoc()){
     $totalPetak += $row['jumlah_petak'] ?? 0;
     $totalNilai += $row['jumlah_nilai'] ?? 0;
 }
-
 // =======================
 // PURATA RESPON
 // =======================
@@ -58,7 +53,6 @@ FROM permohonan
 WHERE tarikh_periksa IS NOT NULL
 AND $where";
 $respon = $conn->query($responQuery)->fetch_assoc()['purata'] ?? 0;
-
 // =======================
 // KPI 5,6,7
 // =======================
@@ -89,7 +83,6 @@ if ($bulan != "SETAHUN") {
 }
 $keseluruhanQuery = "SELECT COUNT(*) as jumlah FROM permohonan WHERE $where_keseluruhan";
 $jumlahKeseluruhan = $conn->query($keseluruhanQuery)->fetch_assoc()['jumlah'] ?? 0;
-
 // =======================
 // Baki Premis Belum Diperiksa
 // =======================
@@ -102,7 +95,6 @@ $bakiBelumQuery = "
          OR tarikh_periksa = '0000-00-00 00:00:00')
 ";
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
-
 // =======================
 // Peratusan Siap Pemeriksaan
 // =======================
@@ -115,10 +107,8 @@ $selesaiQuery = "
     AND tarikh_periksa != '0000-00-00 00:00:00'
 ";
 $jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;
-
 $totalPermohonanBulan = $totalPermohonan;
 $peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
-
 // =======================
 // STATUS COUNTS & CHART DATA
 // =======================
@@ -129,32 +119,28 @@ $statusCounts['BELUM'] = $conn->query("
     AND status = 'BELUM'
     AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')
 ")->fetch_assoc()['jumlah'] ?? 0;
-
 $base_query = "SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND tarikh_periksa IS NOT NULL";
-$statusCounts['CHECKED']   = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ENDORSED']  = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['APPROVED']  = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['REJECTED']  = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ACTIVE']    = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['KIV']       = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
-
+$statusCounts['CHECKED'] = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ENDORSED'] = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['APPROVED'] = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['REJECTED'] = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ACTIVE'] = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['KIV'] = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
 $incompleteTotal = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE'")->fetch_assoc()['jumlah'] ?? 0;
-$incompleteNull  = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
-$incompleteAda   = $incompleteTotal - $incompleteNull;
+$incompleteNull = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
+$incompleteAda = $incompleteTotal - $incompleteNull;
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
-
 $statusColors = [
-    "APPROVED"  => "#10b981",
-    "REJECTED"  => "#ef4444",
-    "CHECKED"   => "#0ea5e9",
-    "KIV"       => "#f59e0b",
-    "BELUM"     => "#64748b",
-    "ACTIVE"    => "#3b82f6",
-    "ENDORSED"  => "#8b5cf6",
+    "APPROVED" => "#10b981",
+    "REJECTED" => "#ef4444",
+    "CHECKED" => "#0ea5e9",
+    "KIV" => "#f59e0b",
+    "BELUM" => "#64748b",
+    "ACTIVE" => "#3b82f6",
+    "ENDORSED" => "#8b5cf6",
     "INCOMPLETE"=> "#f97316"
 ];
 ?>
-
 <!DOCTYPE html>
 <html lang="ms">
 <head>
@@ -172,7 +158,7 @@ $statusColors = [
         .card-kpi { border:none; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.06); transition:transform 0.3s; }
         .card-kpi:hover { transform:translateY(-5px); }
         .counter { font-size:2.5rem; font-weight:700; color:var(--primary); }
-        .counter-sewaan { font-size:2.2rem; } /* saiz lebih kecil khas untuk nilai sewaan */
+        .counter-sewaan { font-size:2.2rem; }
         .chart-container { background:white; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,0.06); padding:1.5rem; }
         @media (max-width:992px) { .sidebar { position:relative; height:auto; width:100%; } .main-content { margin-left:0; } }
     </style>
@@ -227,38 +213,85 @@ $statusColors = [
             </div>
         </div>
 
-        <!-- KPI Cards -->
+        <!-- KPI Cards – susunan baru 3 baris × 3 lajur -->
         <div class="row g-4 mb-5">
-            <div class="col-md-3 col-sm-6">
+
+            <!-- Baris 1 -->
+            <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-text fs-1 text-primary mb-2"></i>
-                        <h6 class="text-muted">Jumlah Permohonan</h6>
-                        <div class="counter" data-target="<?= $totalPermohonan ?>"><?= $totalPermohonan ?></div>
+                        <i class="bi bi-building-check fs-1 text-success mb-2"></i>
+                        <h6 class="text-muted"><?= $labelPermohonanBulan ?></h6>
+                        <div class="counter" data-target="<?= $jumlahSame ?>"><?= number_format($jumlahSame) ?></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building-exclamation fs-1 text-warning mb-2"></i>
+                        <h6 class="text-muted"><?= $labelPermohonanLain ?></h6>
+                        <div class="counter" data-target="<?= $jumlahLain ?>"><?= number_format($jumlahLain) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building fs-1 text-primary mb-2"></i>
+                        <h6 class="text-muted"><?= $labelKeseluruhan ?></h6>
+                        <div class="counter" data-target="<?= $jumlahKeseluruhan ?>"><?= number_format($jumlahKeseluruhan) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baris 2 -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-journal-text fs-1 text-primary mb-2"></i>
+                        <h6 class="text-muted">Jumlah Permohonan <?= $labelBulan ?></h6>
+                        <div class="counter" data-target="<?= $totalPermohonan ?>"><?= number_format($totalPermohonan) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
                         <i class="bi bi-grid-3x3-gap fs-1 text-success mb-2"></i>
-                        <h6 class="text-muted">Jumlah Petak Dimohon</h6>
+                        <h6 class="text-muted">Jumlah Petak Dimohon <?= $labelBulan ?></h6>
                         <div class="counter" data-target="<?= $totalPetak ?>"><?= number_format($totalPetak) ?></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+
+            <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
                         <i class="bi bi-currency-dollar fs-1 text-warning mb-2"></i>
-                        <h6 class="text-muted">Anggaran Nilai Sewaan</h6>
+                        <h6 class="text-muted">Anggaran Nilai Sewaan <?= $labelBulan ?></h6>
                         <div class="counter counter-sewaan" data-target="<?= $totalNilai ?>">
                             RM <?= number_format($totalNilai, 2) ?>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+
+            <!-- Baris 3 -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-hourglass-split fs-1 text-danger mb-2"></i>
+                        <h6 class="text-muted">Baki Premis Belum Diperiksa <?= $labelBulan ?></h6>
+                        <div class="counter text-danger" data-target="<?= $bakiBelum ?>"><?= number_format($bakiBelum) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
                         <i class="bi bi-clock-history fs-1 text-info mb-2"></i>
@@ -268,53 +301,17 @@ $statusColors = [
                 </div>
             </div>
 
-            <div class="col-md-4 col-sm-6">
+            <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
-                        <i class="bi bi-building-check fs-1 text-primary mb-2"></i>
-                        <h6 class="text-muted"><?= $labelKeseluruhan ?></h6>
-                        <div class="counter" data-target="<?= $jumlahKeseluruhan ?>"><?= number_format($jumlahKeseluruhan) ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="card card-kpi bg-white">
-                    <div class="card-body text-center">
-                        <i class="bi bi-building-check fs-1 text-success mb-2"></i>
-                        <h6 class="text-muted"><?= $labelPermohonanBulan ?></h6>
-                        <div class="counter" data-target="<?= $jumlahSame ?>"><?= number_format($jumlahSame) ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="card card-kpi bg-white">
-                    <div class="card-body text-center">
-                        <i class="bi bi-building-exclamation fs-1 text-warning mb-2"></i>
-                        <h6 class="text-muted"><?= $labelPermohonanLain ?></h6>
-                        <div class="counter" data-target="<?= $jumlahLain ?>"><?= number_format($jumlahLain) ?></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="card card-kpi bg-white">
-                    <div class="card-body text-center">
-                        <i class="bi bi-hourglass-split fs-1 text-danger mb-2"></i>
-                        <h6 class="text-muted">Baki Premis Belum Diperiksa (<?= $labelBulan ?>)</h6>
-                        <div class="counter text-danger" data-target="<?= $bakiBelum ?>"><?= number_format($bakiBelum) ?></div>
+                        <i class="bi bi-check-circle-fill fs-1 text-success mb-2"></i>
+                        <h6 class="text-muted">Peratusan Siap Pemeriksaan <?= $labelBulan ?></h6>
+                        <div class="counter text-success" data-target="<?= $peratusSelesai ?>" data-is-percent="true"><?= $peratusSelesai ?>%</div>
+                        <small class="text-muted">(<?= number_format($jumlahSelesai) ?> / <?= number_format($totalPermohonanBulan) ?>)</small>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4 col-sm-6">
-                <div class="card card-kpi bg-white">
-                    <div class="card-body text-center">
-                        <i class="bi bi-check-circle-fill fs-1 text-success mb-2"></i>
-                        <h6 class="text-muted">Peratusan Siap Pemeriksaan (<?= $labelBulan ?>)</h6>
-                        <div class="counter text-success" data-target="<?= $peratusSelesai ?>" data-is-percent="true"><?= $peratusSelesai ?>%</div>
-                        <small class="text-muted">(<?= number_format($jumlahSelesai) ?> daripada <?= number_format($totalPermohonanBulan) ?> permohonan)</small>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Charts Row (kekal) -->
@@ -342,15 +339,14 @@ $statusColors = [
 </div>
 
 <script>
-// Data untuk chart
+// Data untuk chart (kekal)
 const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
-
 const incompleteNull = <?= $incompleteNull ?>;
 const incompleteAda = <?= $incompleteAda ?>;
 
-// Chart configurations (kekal sama seperti sebelumnya)
+// Chart configurations (kekal)
 new Chart(document.getElementById('statusBarChart'), {
     type: 'bar',
     data: {
@@ -417,14 +413,13 @@ new Chart(document.getElementById('trendLineChart'), {
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
 });
 
-// Counter animation (dengan penyesuaian untuk nilai sewaan)
+// Counter animation (kekal)
 document.querySelectorAll('.counter').forEach(el => {
     const target = parseFloat(el.getAttribute('data-target'));
     const isPercent = el.getAttribute('data-is-percent') === 'true';
     let count = 0;
     const duration = 1500;
     const step = target / (duration / 16);
-
     function update() {
         count += step;
         if (count < target) {
