@@ -14,6 +14,7 @@ $labelBulan = ($bulan == "SETAHUN") ? "Setahun" : date("F", mktime(0,0,0,$bulan,
 $labelKeseluruhan = "Jumlah Keseluruhan Premis yang diperiksa pada $labelBulan";
 $labelPermohonanBulan = "Jumlah Premis yang diperiksa (Permohonan $labelBulan)";
 $labelPermohonanLain = "Jumlah Premis yang diperiksa (Permohonan Selain $labelBulan)";
+$labelTelahDiperiksa = "Jumlah Telah Diperiksa $labelBulan";
 // =======================
 // WHERE CLAUSE UTAMA
 // =======================
@@ -54,7 +55,7 @@ WHERE tarikh_periksa IS NOT NULL
 AND $where";
 $respon = $conn->query($responQuery)->fetch_assoc()['purata'] ?? 0;
 // =======================
-// KPI 5,6,7
+// KPI - Jumlah diperiksa (same month) / lain / keseluruhan
 // =======================
 $where_same = "YEAR(tarikh_mohon) = '$tahun'
                AND YEAR(tarikh_periksa) = '$tahun'
@@ -110,7 +111,7 @@ $jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;
 $totalPermohonanBulan = $totalPermohonan;
 $peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
 // =======================
-// STATUS COUNTS & CHART DATA
+// STATUS COUNTS & CHART DATA (kekal)
 // =======================
 $statusCounts = [];
 $statusCounts['BELUM'] = $conn->query("
@@ -213,10 +214,10 @@ $statusColors = [
             </div>
         </div>
 
-        <!-- KPI Cards – susunan baru 3 baris × 3 lajur -->
+        <!-- KPI Cards – susunan baru mengikut arahan -->
         <div class="row g-4 mb-5">
 
-            <!-- Baris 1 -->
+            <!-- Baris 1 (1-3) -->
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -247,7 +248,7 @@ $statusColors = [
                 </div>
             </div>
 
-            <!-- Baris 2 -->
+            <!-- Baris 2 (4-6) -->
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -258,6 +259,27 @@ $statusColors = [
                 </div>
             </div>
 
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check2-square fs-1 text-info mb-2"></i>
+                        <h6 class="text-muted"><?= $labelTelahDiperiksa ?></h6>
+                        <div class="counter" data-target="<?= $jumlahKeseluruhan ?>"><?= number_format($jumlahKeseluruhan) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-kpi bg-white">
+                    <div class="card-body text-center">
+                        <i class="bi bi-hourglass-split fs-1 text-danger mb-2"></i>
+                        <h6 class="text-muted">Baki Premis Belum Diperiksa <?= $labelBulan ?></h6>
+                        <div class="counter text-danger" data-target="<?= $bakiBelum ?>"><?= number_format($bakiBelum) ?></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baris 3 (7-9) -->
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -280,17 +302,6 @@ $statusColors = [
                 </div>
             </div>
 
-            <!-- Baris 3 -->
-            <div class="col-lg-4 col-md-6">
-                <div class="card card-kpi bg-white">
-                    <div class="card-body text-center">
-                        <i class="bi bi-hourglass-split fs-1 text-danger mb-2"></i>
-                        <h6 class="text-muted">Baki Premis Belum Diperiksa <?= $labelBulan ?></h6>
-                        <div class="counter text-danger" data-target="<?= $bakiBelum ?>"><?= number_format($bakiBelum) ?></div>
-                    </div>
-                </div>
-            </div>
-
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -301,6 +312,7 @@ $statusColors = [
                 </div>
             </div>
 
+            <!-- Baris ke-4 (hanya 1 card – no 10) -->
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
                     <div class="card-body text-center">
@@ -311,6 +323,10 @@ $statusColors = [
                     </div>
                 </div>
             </div>
+
+            <!-- Ruang kosong supaya layout balance (2 slot kosong di baris ke-4) -->
+            <div class="col-lg-4 col-md-6 d-none d-lg-block"></div>
+            <div class="col-lg-4 col-md-6 d-none d-lg-block"></div>
 
         </div>
 
