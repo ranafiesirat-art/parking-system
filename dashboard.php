@@ -26,7 +26,7 @@ if ($bulan != "SETAHUN") {
 }
 
 // =======================
-// STATUS + PETAK + NILAI (permohonan bulan ini)
+// STATUS + PETAK + NILAI
 // =======================
 $query = "
 SELECT
@@ -50,7 +50,7 @@ while($row = $result->fetch_assoc()){
 }
 
 // =======================
-// PURATA RESPON (permohonan bulan ini)
+// PURATA RESPON
 // =======================
 $responQuery = "
 SELECT AVG(DATEDIFF(tarikh_periksa, tarikh_mohon)) as purata
@@ -93,7 +93,7 @@ $bakiBelumQuery = "
 $bakiBelum = $conn->query($bakiBelumQuery)->fetch_assoc()['jumlah'] ?? 0;
 
 // =======================
-// Jumlah Telah Diperiksa = permohonan bulan ini yang sudah ada tarikh_periksa
+// Jumlah Telah Diperiksa & Peratusan
 // =======================
 $selesaiQuery = "
     SELECT COUNT(*) as jumlah FROM permohonan
@@ -104,43 +104,61 @@ $selesaiQuery = "
     AND tarikh_periksa != '0000-00-00 00:00:00'
 ";
 $jumlahSelesai = $conn->query($selesaiQuery)->fetch_assoc()['jumlah'] ?? 0;
-
 $totalPermohonanBulan = $totalPermohonan;
 $peratusSelesai = ($totalPermohonanBulan > 0) ? round(($jumlahSelesai / $totalPermohonanBulan) * 100, 1) : 0;
 
 // =======================
-// STATUS COUNTS & CHART DATA
+// QUERY BARU: Pemeriksaan Harian (hanya jika bulan spesifik dipilih)
+// =======================
+$dailyInspections = [];
+$dailyLabels = [];
+if ($bulan != "SETAHUN") {
+    $dailyQuery = "
+        SELECT DATE(tarikh_periksa) as tarikh, COUNT(*) as jumlah
+        FROM permohonan
+        WHERE YEAR(tarikh_periksa) = '$tahun'
+          AND MONTH(tarikh_periksa) = '$bulan'
+          AND tarikh_periksa IS NOT NULL
+        GROUP BY DATE(tarikh_periksa)
+        ORDER BY tarikh ASC
+    ";
+    $dailyResult = $conn->query($dailyQuery);
+    $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $bulan, $tahun);
+    for ($d = 1; $d <= $daysInMonth; $d++) {
+        $dateStr = sprintf("%04d-%02d-%02d", $tahun, $bulan, $d);
+        $dailyLabels[] = $d;
+        $dailyInspections[$dateStr] = 0; // default 0
+    }
+    while ($row = $dailyResult->fetch_assoc()) {
+        $dailyInspections[$row['tarikh']] = (int)$row['jumlah'];
+    }
+    $dailyData = array_values($dailyInspections);
+} else {
+    $dailyLabels = [];
+    $dailyData = [];
+}
+
+// =======================
+// STATUS COUNTS & COLORS (untuk chart sedia ada)
 // =======================
 $statusCounts = [];
-$statusCounts['BELUM'] = $conn->query("
-    SELECT COUNT(*) as jumlah FROM permohonan
-    WHERE $where
-    AND status = 'BELUM'
-    AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')
-")->fetch_assoc()['jumlah'] ?? 0;
-
+$statusCounts['BELUM'] = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'BELUM' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
 $base_query = "SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND tarikh_periksa IS NOT NULL";
-$statusCounts['CHECKED'] = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ENDORSED'] = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['APPROVED'] = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['REJECTED'] = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['ACTIVE'] = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
-$statusCounts['KIV'] = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
-
+$statusCounts['CHECKED']   = $conn->query($base_query . " AND status = 'CHECKED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ENDORSED']  = $conn->query($base_query . " AND status = 'ENDORSED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['APPROVED']  = $conn->query($base_query . " AND status = 'APPROVED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['REJECTED']  = $conn->query($base_query . " AND status = 'REJECTED'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['ACTIVE']    = $conn->query($base_query . " AND status = 'ACTIVE'")->fetch_assoc()['jumlah'] ?? 0;
+$statusCounts['KIV']       = $conn->query($base_query . " AND status = 'KIV'")->fetch_assoc()['jumlah'] ?? 0;
 $incompleteTotal = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE'")->fetch_assoc()['jumlah'] ?? 0;
 $incompleteNull = $conn->query("SELECT COUNT(*) as jumlah FROM permohonan WHERE $where AND status = 'INCOMPLETE' AND (tarikh_periksa IS NULL OR tarikh_periksa = '' OR tarikh_periksa = '0000-00-00' OR tarikh_periksa = '0000-00-00 00:00:00')")->fetch_assoc()['jumlah'] ?? 0;
 $incompleteAda = $incompleteTotal - $incompleteNull;
 $statusCounts['INCOMPLETE'] = $incompleteTotal;
 
 $statusColors = [
-    "APPROVED" => "#10b981",
-    "REJECTED" => "#ef4444",
-    "CHECKED" => "#0ea5e9",
-    "KIV" => "#f59e0b",
-    "BELUM" => "#64748b",
-    "ACTIVE" => "#3b82f6",
-    "ENDORSED" => "#8b5cf6",
-    "INCOMPLETE"=> "#f97316"
+    "APPROVED" => "#10b981", "REJECTED" => "#ef4444", "CHECKED" => "#0ea5e9",
+    "KIV" => "#f59e0b", "BELUM" => "#64748b", "ACTIVE" => "#3b82f6",
+    "ENDORSED" => "#8b5cf6", "INCOMPLETE" => "#f97316"
 ];
 ?>
 <!DOCTYPE html>
@@ -215,9 +233,8 @@ $statusColors = [
             </div>
         </div>
 
-        <!-- KPI Cards -->
+        <!-- KPI Cards (kekal) -->
         <div class="row g-4 mb-5">
-
             <!-- Baris 1 -->
             <div class="col-lg-4 col-md-6">
                 <div class="card card-kpi bg-white">
@@ -328,24 +345,38 @@ $statusColors = [
 
             <div class="col-lg-4 col-md-6 d-none d-lg-block"></div>
             <div class="col-lg-4 col-md-6 d-none d-lg-block"></div>
-
         </div>
 
-        <!-- Charts Row – DIKEMBALIKAN -->
+        <!-- Charts Section – dengan chart harian baru di kanan -->
         <div class="row g-4">
-            <div class="col-lg-8">
+            <!-- Kiri: Taburan Status + Kanan: Pemeriksaan Harian -->
+            <div class="col-lg-6">
                 <div class="chart-container">
                     <h5 class="card-title mb-4">Taburan Status Permohonan</h5>
-                    <canvas id="statusBarChart" height="200"></canvas>
+                    <canvas id="statusBarChart" height="220"></canvas>
                 </div>
             </div>
+
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="card-title mb-4">Pemeriksaan Harian (<?= $labelBulan ?>)</h5>
+                    <?php if ($bulan != "SETAHUN" && !empty($dailyLabels)): ?>
+                        <canvas id="dailyInspectionChart" height="220"></canvas>
+                    <?php else: ?>
+                        <p class="text-muted text-center mt-5">Data harian hanya tersedia apabila bulan spesifik dipilih.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Bawah: Pie & Trend -->
             <div class="col-lg-4">
                 <div class="chart-container">
                     <h5 class="card-title mb-4">Pecahan Petak Mengikut Status</h5>
                     <canvas id="petakPieChart" height="220"></canvas>
                 </div>
             </div>
-            <div class="col-12">
+
+            <div class="col-lg-8">
                 <div class="chart-container">
                     <h5 class="card-title mb-4">Trend Permohonan (Contoh Simulasi Bulanan)</h5>
                     <canvas id="trendLineChart" height="120"></canvas>
@@ -356,14 +387,14 @@ $statusColors = [
 </div>
 
 <script>
-// Data untuk chart
+// Data sedia ada
 const statusLabels = <?= json_encode(array_keys($statusCounts)) ?>;
 const statusValues = <?= json_encode(array_values($statusCounts)) ?>;
 const colors = <?= json_encode(array_values($statusColors)) ?>;
 const incompleteNull = <?= $incompleteNull ?>;
 const incompleteAda = <?= $incompleteAda ?>;
 
-// Chart 1: Taburan Status Permohonan (Bar Horizontal)
+// Chart 1: Taburan Status
 new Chart(document.getElementById('statusBarChart'), {
     type: 'bar',
     data: {
@@ -395,7 +426,7 @@ new Chart(document.getElementById('statusBarChart'), {
     }
 });
 
-// Chart 2: Pecahan Petak Mengikut Status (Pie)
+// Chart 2: Pecahan Petak (Pie)
 new Chart(document.getElementById('petakPieChart'), {
     type: 'pie',
     data: {
@@ -416,7 +447,7 @@ new Chart(document.getElementById('petakPieChart'), {
     }
 });
 
-// Chart 3: Trend Permohonan (Line – simulasi)
+// Chart 3: Trend Simulasi
 new Chart(document.getElementById('trendLineChart'), {
     type: 'line',
     data: {
@@ -432,7 +463,40 @@ new Chart(document.getElementById('trendLineChart'), {
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
 });
 
-// Counter animation
+// Chart 4 BARU: Pemeriksaan Harian
+<?php if ($bulan != "SETAHUN" && !empty($dailyLabels)): ?>
+new Chart(document.getElementById('dailyInspectionChart'), {
+    type: 'line',
+    data: {
+        labels: <?= json_encode($dailyLabels) ?>,
+        datasets: [{
+            label: 'Bilangan Pemeriksaan',
+            data: <?= json_encode($dailyData) ?>,
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: true,
+            pointBackgroundColor: 'var(--primary)',
+            pointBorderColor: '#fff',
+            pointHoverRadius: 6,
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: true, position: 'top' }
+        },
+        scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Jumlah Pemeriksaan' } },
+            x: { title: { display: true, text: 'Hari dalam Bulan' } }
+        }
+    }
+});
+<?php endif; ?>
+
+// Counter animation (kekal)
 document.querySelectorAll('.counter').forEach(el => {
     const target = parseFloat(el.getAttribute('data-target'));
     const isPercent = el.getAttribute('data-is-percent') === 'true';
