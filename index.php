@@ -1,4 +1,13 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+// Kod login lama anda kekal di bawah...
+session_start();
+// ... (seluruh kod lama anda)
+?>
+<?php
 session_start();
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header("Location: login.php");
@@ -82,7 +91,6 @@ $tahun_semasa = date("Y");
     </style>
 </head>
 <body>
-
 <!-- Navbar Atas (dengan Log Keluar) -->
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
     <div class="container">
@@ -118,13 +126,17 @@ $tahun_semasa = date("Y");
     <div class="container">
         <h1>Sistem Bapak Napie</h1>
         <p class="lead mb-5">Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru</p>
-       
+      
         <div class="d-flex justify-content-center gap-4 flex-wrap">
             <a href="dashboard.php?tahun=<?= $tahun_semasa ?>&bulan=SETAHUN" class="btn btn-light btn-lg-custom shadow">
                 <i class="bi bi-speedometer2 me-2"></i> Masuk Dashboard Analitik
             </a>
             <a href="add.php" class="btn btn-outline-light btn-lg-custom shadow">
                 <i class="bi bi-plus-circle me-2"></i> Permohonan Baru
+            </a>
+            <!-- Button baru ke Mileage-System -->
+            <a href="mileage_redirect.php" class="btn btn-primary btn-lg-custom shadow">
+                <i class="bi bi-speedometer2 me-2"></i> Pergi ke Sistem Mileage
             </a>
         </div>
     </div>
@@ -194,4 +206,3 @@ $tahun_semasa = date("Y");
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
