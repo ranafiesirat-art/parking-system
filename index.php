@@ -3,9 +3,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-// Kod login lama anda kekal di bawah...
-session_start();
-// ... (seluruh kod lama anda)
+
 ?>
 <?php
 session_start();
@@ -124,7 +122,7 @@ $tahun_semasa = date("Y");
 <!-- Hero Section (dengan padding atas sebab navbar fixed) -->
 <section class="hero" style="padding-top: 120px;">
     <div class="container">
-        <h1>Sistem Bapak Napie v3 TEST</h1>
+        <h1>Sistem Bapak Napie v4 TEST</h1>
         <p class="lead mb-5">Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru</p>
       
         <div class="d-flex justify-content-center gap-4 flex-wrap">
