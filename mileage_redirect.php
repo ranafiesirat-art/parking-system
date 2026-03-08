@@ -21,6 +21,6 @@ $hash = hash('sha256', $username . '|' . $timestamp . '|' . $secret);
 $token = base64_encode($username . '|' . $timestamp . '|' . $hash);
 
 // Redirect ke mileage-system dengan token
-header("Location: http://localhost/mileage-system/login.php?token=" . urlencode($token));
+header("Location: /mileage-system/login.php?token=" . urlencode($token));
 exit;
 ?>
