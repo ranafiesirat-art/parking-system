@@ -122,7 +122,7 @@ $tahun_semasa = date("Y");
 <!-- Hero Section (dengan padding atas sebab navbar fixed) -->
 <section class="hero" style="padding-top: 120px;">
     <div class="container">
-        <h1>Sistem Bapak Napie</h1>
+        <h1>Sistem Bapak Napie V2</h1>
         <p class="lead mb-5">Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru</p>
       
         <div class="d-flex justify-content-center gap-4 flex-wrap">
@@ -133,8 +133,8 @@ $tahun_semasa = date("Y");
                 <i class="bi bi-plus-circle me-2"></i> Permohonan Baru
             </a>
             <!-- Button baru ke Mileage-System -->
-            <a href="mileage_redirect.php" class="btn btn-primary btn-lg-custom shadow">
-                <i class="bi bi-speedometer2 me-2"></i> Pergi ke Sistem Mileage
+            <a href="/parking-system/mileage_redirect.php" class="btn btn-primary btn-lg-custom shadow">
+                    <i class="bi bi-speedometer2 me-2"></i> Pergi ke Sistem Mileage
             </a>
         </div>
     </div>
