@@ -39,5 +39,5 @@ $token = base64_encode($username . '|' . $timestamp . '|' . $hash);
 | Redirect ke Mileage System (ROOT SAFE REDIRECT)
 |--------------------------------------------------------------------------
 */
-header("Location: http://localhost/mileage-system/login.php?token=" . urlencode($token));
+header("Location: https://mileage.nrinnovations.my/login.php?token=" . urlencode($token));
 exit;
