@@ -8,10 +8,11 @@ echo ===============================
 cd /d C:\xampp_new\htdocs\parking-system
 
 echo.
-set /p msg=Enter commit message: 
+set /p msg=Enter commit message:
+if "%msg%"=="" set msg=auto update
 
 git add .
-git commit -m "%msg%"
+git commit -m "%msg%" || echo No changes to commit
 git push origin main
 
 echo.
