@@ -26,7 +26,7 @@ if (isset($_POST['submit'])) {
     $alamat_no = trim($_POST['alamat_no'] ?? '');
     $alamat_jalan = trim($_POST['alamat_jalan'] ?? '');
     $alamat_taman = trim($_POST['alamat_taman'] ?? '');
-   
+  
     // Pegawai bertanggungjawab diambil dari session
     $pegawai_bertanggungjawab = $_SESSION['nama_pegawai'] ?? 'Sistem';
 
@@ -83,7 +83,7 @@ if (isset($_POST['submit'])) {
     <title>Tambah Permohonan Baru</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+   
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -313,7 +313,7 @@ if (isset($_POST['submit'])) {
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-floating">
-                                            <input type="date" name="tarikh_mohon" class="form-control" id="tarikh_mohon" value="<?= date('Y-m-d') ?>">
+                                            <input type="date" name="tarikh_mohon" class="form-control" id="tarikh_mohon">
                                             <label for="tarikh_mohon">Tarikh Mohon</label>
                                         </div>
                                     </div>
@@ -331,7 +331,7 @@ if (isset($_POST['submit'])) {
                                 <div class="section-title">Pegawai Bertanggungjawab</div>
                                 <div class="col-md-8">
                                     <div class="form-floating">
-                                        <input type="text" class="form-control bg-light" 
+                                        <input type="text" class="form-control bg-light"
                                                value="<?= htmlspecialchars($_SESSION['nama_pegawai'] ?? 'Sistem') ?>" readonly>
                                         <label>Nama Pegawai</label>
                                     </div>
@@ -363,13 +363,12 @@ function kiraNilai() {
     let petak = parseInt(document.getElementById('bil_petak').value) || 0;
     let tempoh = document.getElementById('tempoh').value;
     let nilai = 0;
-
     if (tempoh === "6 BULAN") nilai = petak * 900;
     else if (tempoh === "12 BULAN") nilai = petak * 1800;
 
     const nilaiField = document.getElementById('nilai_sewa');
-    nilaiField.value = nilai > 0 
-        ? "RM " + nilai.toLocaleString('ms-MY', {minimumFractionDigits: 2}) 
+    nilaiField.value = nilai > 0
+        ? "RM " + nilai.toLocaleString('ms-MY', {minimumFractionDigits: 2})
         : "RM 0.00";
 }
 
@@ -377,6 +376,5 @@ document.getElementById('bil_petak').addEventListener('change', kiraNilai);
 document.getElementById('tempoh').addEventListener('change', kiraNilai);
 kiraNilai(); // Jalankan sekali pada load
 </script>
-
 </body>
 </html>
