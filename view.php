@@ -44,7 +44,7 @@ if ($jum_petak_mohon > 0) {
 $nilai_sewa_display = $nilai_sewa > 0 ? "RM " . number_format($nilai_sewa, 2) : '(tiada)';
 
 // =============================================
-// EXPORT PDF - dengan header HTTP untuk force download
+// EXPORT PDF
 // =============================================
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $options = new Options();
@@ -52,14 +52,13 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $options->set('defaultFont', 'DejaVuSans');
     $dompdf = new Dompdf($options);
 
-    // Nama fail PDF ikut nama syarikat (sama seperti asal)
     $nama_syarikat_raw = trim($data['syarikat'] ?? 'Tiada_Nama_Syarikat');
     $nama_syarikat = preg_replace('/[^A-Za-z0-9\- ]/', '_', $nama_syarikat_raw);
     $nama_syarikat = str_replace(' ', '_', $nama_syarikat);
     $nama_syarikat = substr($nama_syarikat, 0, 50);
+
     $filename = "Laporan_Pemeriksaan_" . $nama_syarikat . "_" . ($data['custom_id'] ?? $id) . "_" . date('Ymd_His') . ".pdf";
 
-    // Tambah header HTTP untuk memaksa download
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: private, max-age=0, must-revalidate');
@@ -87,16 +86,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             .catatan { border: 1px solid #999; padding: 2mm; background: #f9f9f9; min-height: 16mm; font-size: 8.5pt; }
             .catatan strong { color: #003087; }
             .stamp-container { text-align: right; margin-top: 4mm; }
-            .stamp {
-                width: 60mm;
-                height: 22mm;
-                border: 2px dashed #000;
-                text-align: center;
-                padding: 2mm 0;
-                font-weight: bold;
-                font-size: 8.5pt;
-                display: inline-block;
-            }
+            .stamp { width: 60mm; height: 22mm; border: 2px dashed #000; text-align: center; padding: 2mm 0; font-weight: bold; font-size: 8.5pt; display: inline-block; }
             .stamp-text { margin-top: -1mm; }
             .footer { margin-top: 3mm; text-align: center; font-size: 7.5pt; color: #555; border-top: 1px solid #ccc; padding-top: 2mm; }
         </style>
@@ -108,31 +98,31 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <div class="tajuk">LAPORAN PEMERIKSAAN & SIASATAN TAPAK</div>
         </div>
         <table class="info-table">
-            <tr><td class="label">No ID / Custom ID</td><td class="value"><?= htmlspecialchars($data['custom_id'] ?? $id) ?></td></tr>
-            <tr><td class="label">Status Permohonan</td><td class="value"><?= htmlspecialchars($status) ?></td></tr>
-            <tr><td class="label">Nama Syarikat</td><td class="value"><?= htmlspecialchars($data['syarikat'] ?: '-') ?></td></tr>
-            <tr><td class="label">Nama Pemohon</td><td class="value"><?= htmlspecialchars($data['pemohon'] ?: '-') ?></td></tr>
-            <tr><td class="label">No Telefon</td><td class="value"><?= htmlspecialchars($data['no_tel'] ?: '-') ?></td></tr>
-            <tr><td class="label">Tarikh Mohon</td><td class="value"><?= formatTarikh($data['tarikh_mohon']) ?></td></tr>
-            <tr><td class="label">Bil Hari Sejak Mohon</td><td class="value"><?= $hariKe ?></td></tr>
+            <tr><td class="label">No ID / Custom ID</td><td><?= htmlspecialchars($data['custom_id'] ?? $id) ?></td></tr>
+            <tr><td class="label">Status Permohonan</td><td><?= htmlspecialchars($status) ?></td></tr>
+            <tr><td class="label">Nama Syarikat</td><td><?= htmlspecialchars($data['syarikat'] ?: '-') ?></td></tr>
+            <tr><td class="label">Nama Pemohon</td><td><?= htmlspecialchars($data['pemohon'] ?: '-') ?></td></tr>
+            <tr><td class="label">No Telefon</td><td><?= htmlspecialchars($data['no_tel'] ?: '-') ?></td></tr>
+            <tr><td class="label">Tarikh Mohon</td><td><?= formatTarikh($data['tarikh_mohon']) ?></td></tr>
+            <tr><td class="label">Bil Hari Sejak Mohon</td><td><?= $hariKe ?></td></tr>
         </table>
         <div class="section-title section-red">Maklumat Lokasi & Petak</div>
         <table class="info-table">
-            <tr><td class="label">Lokasi Jalan</td><td class="value"><?= htmlspecialchars($lokasi_jalan_display) ?></td></tr>
-            <tr><td class="label">Alamat Penuh</td><td class="value"><?= htmlspecialchars($alamat_penuh) ?></td></tr>
-            <tr><td class="label">No Petak</td><td class="value"><?= htmlspecialchars($data['no_petak'] ?: '-') ?></td></tr>
-            <tr><td class="label">Bil Petak Mohon</td><td class="value"><?= $jum_petak_mohon > 0 ? $jum_petak_mohon : '-' ?></td></tr>
-            <tr><td class="label">Tempoh Sewaan</td><td class="value"><?= htmlspecialchars($tempoh_sewa ?: '-') ?></td></tr>
-            <tr><td class="label">Anggaran Nilai Sewaan</td><td class="value"><?= $nilai_sewa_display ?></td></tr>
-            <tr><td class="label">Kedudukan Petak</td><td class="value"><?= htmlspecialchars($data['kedudukan_petak'] ?: '-') ?></td></tr>
-            <tr><td class="label">Jumlah Petak Sedia Ada</td><td class="value"><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '-') ?></td></tr>
-            <tr><td class="label">Jenis Bangunan</td><td class="value"><?= htmlspecialchars($data['jenis_bangunan'] ?: '-') ?></td></tr>
+            <tr><td class="label">Lokasi Jalan</td><td><?= htmlspecialchars($lokasi_jalan_display) ?></td></tr>
+            <tr><td class="label">Alamat Penuh</td><td><?= htmlspecialchars($alamat_penuh) ?></td></tr>
+            <tr><td class="label">No Petak</td><td><?= htmlspecialchars($data['no_petak'] ?: '-') ?></td></tr>
+            <tr><td class="label">Bil Petak Mohon</td><td><?= $jum_petak_mohon > 0 ? $jum_petak_mohon : '-' ?></td></tr>
+            <tr><td class="label">Tempoh Sewaan</td><td><?= htmlspecialchars($tempoh_sewa ?: '-') ?></td></tr>
+            <tr><td class="label">Anggaran Nilai Sewaan</td><td><?= $nilai_sewa_display ?></td></tr>
+            <tr><td class="label">Kedudukan Petak</td><td><?= htmlspecialchars($data['kedudukan_petak'] ?: '-') ?></td></tr>
+            <tr><td class="label">Jumlah Petak Sedia Ada</td><td><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '-') ?></td></tr>
+            <tr><td class="label">Jenis Bangunan</td><td><?= htmlspecialchars($data['jenis_bangunan'] ?: '-') ?></td></tr>
         </table>
         <div class="section-title section-red">Maklumat Pemeriksaan</div>
         <table class="info-table">
-            <tr><td class="label">Tarikh Periksa</td><td class="value"><?= formatTarikh($data['tarikh_periksa']) ?></td></tr>
-            <tr><td class="label">Respon Hari Ke</td><td class="value"><?= $responHariKe ?></td></tr>
-            <tr><td class="label">Dokumen Sokongan</td><td class="value"><?= htmlspecialchars($data['doc_sokongan'] ?: '-') ?></td></tr>
+            <tr><td class="label">Tarikh Periksa</td><td><?= formatTarikh($data['tarikh_periksa']) ?></td></tr>
+            <tr><td class="label">Respon Hari Ke</td><td><?= $responHariKe ?></td></tr>
+            <tr><td class="label">Dokumen Sokongan</td><td><?= htmlspecialchars($data['doc_sokongan'] ?: '-') ?></td></tr>
         </table>
         <div class="section-title section-red">Catatan & Ulasan</div>
         <div class="catatan">
@@ -155,7 +145,6 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     </html>
     <?php
     $html = ob_get_clean();
-
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
@@ -171,169 +160,186 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <title>Maklumat Permohonan #<?= htmlspecialchars($data['custom_id'] ?? $id) ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <style>
         :root {
-            --primary: #0d6efd;
-            --primary-dark: #0a58ca;
-            --secondary: #6c757d;
-            --success: #198754;
-            --info: #0dcaf0;
-            --warning: #ffc107;
-            --danger: #dc3545;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --bg-light: #f0f4f8;
-            --shadow: rgba(0,0,0,0.08);
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
         }
         body {
-            background: var(--bg-light);
-            min-height: 100vh;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: var(--dark);
+            background: #f8fafc;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
-        .main-card {
+        .main-content {
+            padding: 2rem 1.5rem;
+        }
+        .card {
             border: none;
             border-radius: 16px;
-            box-shadow: 0 4px 20px var(--shadow);
-            background: white;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.07);
             overflow: hidden;
         }
         .card-header {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
             color: white;
             padding: 1.5rem 2rem;
             border-bottom: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         .section-title {
-            font-size: 1.4rem;
+            font-size: 1.15rem;
             font-weight: 600;
-            color: var(--primary);
+            color: #334155;
             margin-bottom: 1.25rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid rgba(13,110,253,0.1);
-        }
-        .detail-row {
-            display: flex;
-            margin-bottom: 1rem;
-            font-size: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
         }
         .detail-label {
             font-weight: 600;
+            color: #64748b;
             min-width: 220px;
-            color: var(--secondary);
-            flex: 0 0 220px;
         }
         .detail-value {
-            flex: 1;
-            color: var(--dark);
-        }
-        .status-badge {
-            font-size: 1.2rem;
-            padding: 0.5rem 1rem;
-            border-radius: 30px;
-        }
-        .btn {
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
+            color: #1e2937;
             font-weight: 500;
         }
-        .print-only { display: none; }
+        .status-badge {
+            font-size: 1.1rem;
+            padding: 0.55rem 1.25rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .info-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 1.75rem;
+            border: 1px solid #e2e8f0;
+        }
+        .btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+        }
     </style>
 </head>
 <body>
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-9">
-            <div class="main-card card">
-                <div class="card-header d-flex align-items-center justify-content-between no-print">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-file-earmark-text fs-4 me-3"></i>
-                        <h4 class="mb-0">Maklumat Permohonan</h4>
-                    </div>
+
+<div class="main-content">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-11 col-xl-10">
+
+                <!-- Header -->
+                <div class="d-flex align-items-center justify-content-between mb-4">
                     <div>
+                        <h3 class="fw-semibold text-dark mb-1">
+                            <i class="bi bi-file-earmark-text me-3 text-primary"></i>
+                            Maklumat Permohonan
+                        </h3>
+                        <p class="text-muted mb-0">ID: <strong><?= htmlspecialchars($data['custom_id'] ?? $id) ?></strong></p>
+                    </div>
+                    <a href="senarai.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Kembali ke Senarai
+                    </a>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle fs-3 me-3"></i>
+                            <h4 class="mb-0">Butiran Lengkap Permohonan</h4>
+                        </div>
                         <span class="status-badge badge <?= $statusClass ?>">
                             <?= htmlspecialchars($status) ?>
                         </span>
                     </div>
-                </div>
-                <div class="card-body p-4 p-md-5">
-                    <!-- Maklumat Pemohon -->
-                    <div class="section-card">
-                        <div class="section-title">Maklumat Pemohon</div>
-                        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><?= htmlspecialchars($status ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">No ID</span><span class="detail-value"><?= htmlspecialchars($data['custom_id'] ?? $id) ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Nama Syarikat</span><span class="detail-value"><?= htmlspecialchars($data['syarikat'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Nama Pemohon</span><span class="detail-value"><?= htmlspecialchars($data['pemohon'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">No Telefon</span><span class="detail-value"><?= htmlspecialchars($data['no_tel'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Lesen MBJB</span><span class="detail-value"><?= htmlspecialchars($data['lesen_mbjb'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">No SSM</span><span class="detail-value"><?= htmlspecialchars($data['no_ssm'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Tarikh Mohon</span><span class="detail-value"><?= formatTarikh($data['tarikh_mohon']) ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Bil Hari</span><span class="detail-value"><?= $hariKe ?: '(tiada)' ?></span></div>
-                    </div>
 
-                    <!-- Maklumat Lokasi & Alamat -->
-                    <div class="section-card mt-5">
-                        <div class="section-title">Maklumat Lokasi & Alamat</div>
-                        <div class="detail-row"><span class="detail-label">Lokasi Jalan</span><span class="detail-value"><?= htmlspecialchars($lokasi_jalan_display) ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Alamat Penuh</span><span class="detail-value"><?= htmlspecialchars($alamat_penuh) ?></span></div>
-                        <div class="detail-row"><span class="detail-label">No Petak</span><span class="detail-value"><?= htmlspecialchars($data['no_petak'] ?: '(tiada)') ?></span></div>
-                    </div>
+                    <div class="card-body p-4 p-lg-5">
 
-                    <!-- Maklumat Petak & Sewaan -->
-                    <div class="section-card mt-5">
-                        <div class="section-title">Maklumat Petak & Sewaan</div>
-                        <div class="detail-row"><span class="detail-label">Bil Petak Mohon</span><span class="detail-value"><?= $jum_petak_mohon > 0 ? $jum_petak_mohon : '(tiada)' ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Tempoh Sewaan</span><span class="detail-value"><?= htmlspecialchars($tempoh_sewa ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Nilai Sewaan</span><span class="detail-value"><?= $nilai_sewa_display ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Kedudukan Petak</span><span class="detail-value"><?= htmlspecialchars($data['kedudukan_petak'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Jumlah Petak Sedia</span><span class="detail-value"><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '(tiada)') ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Jenis Bangunan</span><span class="detail-value"><?= htmlspecialchars($data['jenis_bangunan'] ?: '(tiada)') ?></span></div>
-                    </div>
-
-                    <!-- Maklumat Pemeriksaan -->
-                    <div class="section-card mt-5">
-                        <div class="section-title">Maklumat Pemeriksaan</div>
-                        <div class="detail-row"><span class="detail-label">Tarikh Periksa</span><span class="detail-value"><?= formatTarikh($data['tarikh_periksa']) ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Respon Hari Ke</span><span class="detail-value"><?= $responHariKe ?></span></div>
-                        <div class="detail-row"><span class="detail-label">Dokumen Sokongan</span><span class="detail-value"><?= htmlspecialchars($data['doc_sokongan'] ?: '(tiada)') ?></span></div>
-                    </div>
-
-                    <!-- Catatan & Ulasan -->
-                    <div class="section-card mt-5">
-                        <div class="section-title">Catatan & Ulasan</div>
-                        <div class="detail-row"><span class="detail-label">Tugasan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['tugasan'] ?: '(tiada)')) ?></div></div>
-                        <div class="detail-row"><span class="detail-label">Catatan Siasatan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['catatan_siasatan'] ?: '(tiada)')) ?></div></div>
-                        <div class="detail-row"><span class="detail-label">Ulasan Siasatan</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_siasatan'] ?: '(tiada)')) ?></div></div>
-                        <div class="detail-row"><span class="detail-label">Ulasan Pegawai</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pegawai'] ?: '(tiada)')) ?></div></div>
-                        <div class="detail-row"><span class="detail-label">Ulasan Pengarah</span><div class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pengarah'] ?: '(tiada)')) ?></div></div>
-                    </div>
-
-                    <!-- Footer cetakan (hanya untuk print) -->
-                    <div class="print-only stamp-footer mt-5">
-                        <div class="stamp-container">
-                            <div class="stamp">
-                                <div class="stamp-text">(TARIKH & CAP SYARIKAT)</div>
+                        <!-- Maklumat Pemohon -->
+                        <div class="info-card">
+                            <div class="section-title">Maklumat Pemohon</div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><span class="detail-label">No ID / Custom ID</span><br><span class="detail-value"><?= htmlspecialchars($data['custom_id'] ?? $id) ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Status</span><br><span class="detail-value"><?= htmlspecialchars($status) ?></span></div>
+                                <div class="col-12"><span class="detail-label">Nama Syarikat</span><br><span class="detail-value"><?= htmlspecialchars($data['syarikat'] ?: '(tiada)') ?></span></div>
+                                <div class="col-12"><span class="detail-label">Alamat Penuh</span><br><span class="detail-value"><?= htmlspecialchars($alamat_penuh) ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Nama Pemohon</span><br><span class="detail-value"><?= htmlspecialchars($data['pemohon'] ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">No Telefon</span><br><span class="detail-value"><?= htmlspecialchars($data['no_tel'] ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Tarikh Mohon</span><br><span class="detail-value"><?= formatTarikh($data['tarikh_mohon']) ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Bil Hari Sejak Mohon</span><br><span class="detail-value"><?= $hariKe ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Lesen MBJB</span><br><span class="detail-value"><?= htmlspecialchars($data['lesen_mbjb'] ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">No SSM</span><br><span class="detail-value"><?= htmlspecialchars($data['no_ssm'] ?: '(tiada)') ?></span></div>
+                                <div class="col-12"><span class="detail-label">Dokumen Sokongan</span><br><span class="detail-value"><?= htmlspecialchars($data['doc_sokongan'] ?: '(tiada)') ?></span></div>
                             </div>
                         </div>
-                        <div class="footer-text mt-3">
-                            Unit Letak Kereta | Jabatan Penguatkuasaan | Majlis Bandaraya Johor Bahru<br>
-                            Dokumen rasmi untuk semakan di tapak sahaja.
-                        </div>
-                    </div>
 
-                    <!-- Butang web (termasuk Kemaskini) -->
-                    <div class="text-end mt-5 no-print">
-                        <a href="index.php" class="btn btn-outline-secondary me-2">Keluar</a>
-                        <a href="edit.php?id=<?= $id ?>" class="btn btn-warning me-2">Kemaskini</a>
-                        <a href="?id=<?= $id ?>&export=pdf" class="btn btn-info me-2">
-                            <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
-                        </a>
-                        <button onclick="window.print()" class="btn btn-dark">
-                            <i class="bi bi-printer me-1"></i> Cetak
-                        </button>
+                        <!-- Maklumat Petak & Sewaan -->
+                        <div class="info-card">
+                            <div class="section-title">Maklumat Petak & Sewaan</div>
+                            <div class="row g-3">
+                                <div class="col-12"><span class="detail-label">Lokasi Jalan</span><br><span class="detail-value"><?= htmlspecialchars($lokasi_jalan_display) ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">No Petak</span><br><span class="detail-value"><?= htmlspecialchars($data['no_petak'] ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Bil Petak Mohon</span><br><span class="detail-value"><?= $jum_petak_mohon > 0 ? $jum_petak_mohon : '(tiada)' ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Tempoh Sewaan</span><br><span class="detail-value"><?= htmlspecialchars($tempoh_sewa ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Nilai Sewaan</span><br><span class="detail-value fw-bold text-success"><?= $nilai_sewa_display ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Kedudukan Petak</span><br><span class="detail-value"><?= htmlspecialchars($data['kedudukan_petak'] ?: '(tiada)') ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Jumlah Petak Sedia Ada</span><br><span class="detail-value"><?= htmlspecialchars($data['jumlah_petak_sedia'] ?: '(tiada)') ?></span></div>
+                                <div class="col-12"><span class="detail-label">Jenis Bangunan</span><br><span class="detail-value"><?= htmlspecialchars($data['jenis_bangunan'] ?: '(tiada)') ?></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Maklumat Pemeriksaan -->
+                        <div class="info-card">
+                            <div class="section-title">Maklumat Pemeriksaan</div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><span class="detail-label">Tarikh Periksa</span><br><span class="detail-value"><?= formatTarikh($data['tarikh_periksa']) ?></span></div>
+                                <div class="col-md-6"><span class="detail-label">Respon Hari Ke</span><br><span class="detail-value"><?= $responHariKe ?></span></div>
+                            </div>
+                        </div>
+
+                        <!-- Catatan & Ulasan -->
+                        <div class="info-card">
+                            <div class="section-title">Catatan & Ulasan</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <span class="detail-label">Tugasan</span><br>
+                                    <span class="detail-value"><?= nl2br(htmlspecialchars($data['tugasan'] ?: '(tiada)')) ?></span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="detail-label">Catatan Siasatan</span><br>
+                                    <span class="detail-value"><?= nl2br(htmlspecialchars($data['catatan_siasatan'] ?: '(tiada)')) ?></span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="detail-label">Ulasan Siasatan</span><br>
+                                    <span class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_siasatan'] ?: '(tiada)')) ?></span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="detail-label">Ulasan Pegawai</span><br>
+                                    <span class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pegawai'] ?: '(tiada)')) ?></span>
+                                </div>
+                                <div class="col-12">
+                                    <span class="detail-label">Ulasan Pengarah</span><br>
+                                    <span class="detail-value"><?= nl2br(htmlspecialchars($data['ulasan_pengarah'] ?: '(tiada)')) ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Butang Tindakan -->
+                        <div class="d-flex flex-wrap gap-3 justify-content-end mt-5 pt-4 border-top">
+                            <a href="senarai.php" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i>Kembali ke Senarai
+                            </a>
+                            <a href="edit.php?id=<?= $id ?>" class="btn btn-warning px-4">
+                                <i class="bi bi-pencil-square me-2"></i>Kemaskini
+                            </a>
+                            <a href="?id=<?= $id ?>&export=pdf" class="btn btn-danger px-4">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+                            </a>
+                            <button onclick="window.print()" class="btn btn-dark px-4">
+                                <i class="bi bi-printer me-2"></i>Cetak
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>
