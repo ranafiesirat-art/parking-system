@@ -64,7 +64,6 @@ $total = $result->num_rows;
 $rows = [];
 $bil = 1;
 while($row = $result->fetch_assoc()){
-    // PAPARAN TARIKH PERIKSA: NULL / kosong / invalid → "BELUM PERIKSA"
     $tarikh_periksa_raw = trim($row['tarikh_periksa'] ?? '');
     $tarikh_periksa_display = '';
     if ($tarikh_periksa_raw && $tarikh_periksa_raw !== '0000-00-00' && $tarikh_periksa_raw !== '0000-00-00 00:00:00') {
@@ -92,7 +91,7 @@ while($row = $result->fetch_assoc()){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senarai Permohonan - Dashboard</title>
+    <title>Senarai Permohonan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- DataTables CSS -->
@@ -108,41 +107,24 @@ while($row = $result->fetch_assoc()){
             background: #f8fafc;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
-        .sidebar {
-            background: #1e2937;
-            color: #f1f5f9;
-            min-height: 100vh;
-            position: fixed;
-            width: 260px;
-            z-index: 100;
-        }
-        .sidebar .nav-link {
-            color: #cbd5e1;
-            padding: 0.75rem 1.25rem;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: #334155;
-            color: white;
-        }
         .main-content {
-            margin-left: 260px;
-            padding: 1.5rem;
+            padding: 2rem 1.5rem;
+            max-width: 100%;
         }
         .top-navbar {
             background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            z-index: 90;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            margin-bottom: 2rem;
         }
         .card {
             border: none;
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-            transition: transform 0.2s;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.07);
         }
-        .card:hover {
-            transform: translateY(-3px);
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
         }
         .table th {
             background: #f8fafc;
@@ -150,12 +132,14 @@ while($row = $result->fetch_assoc()){
             font-weight: 600;
             text-align: center;
             vertical-align: middle;
+            font-size: 0.95rem;
         }
         .status-badge {
-            padding: 0.35em 0.85em;
+            padding: 0.4em 0.95em;
             border-radius: 9999px;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 600;
+            white-space: nowrap;
         }
         .bg-belum { background: #64748b; color: white; }
         .bg-checked { background: #06b6d4; color: white; }
@@ -168,6 +152,7 @@ while($row = $result->fetch_assoc()){
 
         .form-control, .form-select {
             border-radius: 10px;
+            border: 1px solid #cbd5e1;
         }
         .btn-primary {
             background: var(--primary-color);
@@ -177,56 +162,32 @@ while($row = $result->fetch_assoc()){
             background: var(--primary-dark);
             border-color: var(--primary-dark);
         }
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            border-radius: 8px !important;
-        }
     </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar d-none d-md-block">
-    <div class="p-4 border-bottom border-secondary">
-        <h4 class="fw-bold text-white mb-0"><i class="bi bi-building me-2"></i>Admin Panel</h4>
-    </div>
-    <ul class="nav flex-column pt-3">
-        <li class="nav-item">
-            <a href="index.php" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-        </li>
-        <li class="nav-item">
-            <a href="senarai.php" class="nav-link active"><i class="bi bi-list-ul me-2"></i> Senarai Permohonan</a>
-        </li>
-        <li class="nav-item">
-            <a href="add.php" class="nav-link"><i class="bi bi-plus-circle me-2"></i> Permohonan Baru</a>
-        </li>
-        <li class="nav-item mt-4">
-            <a href="#" class="nav-link"><i class="bi bi-gear me-2"></i> Tetapan</a>
-        </li>
-    </ul>
-</div>
-
-<!-- Main Content -->
 <div class="main-content">
     <!-- Top Navbar -->
-    <nav class="top-navbar navbar navbar-expand-lg navbar-light px-4 py-3 rounded-4 mb-4">
+    <nav class="top-navbar navbar navbar-expand-lg navbar-light px-4 py-3">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
-                <button class="navbar-toggler d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <h5 class="mb-0 fw-semibold text-secondary">Senarai Permohonan</h5>
+                <h4 class="mb-0 fw-semibold text-dark">
+                    <i class="bi bi-clipboard-data me-3"></i>Senarai Permohonan
+                </h4>
             </div>
             
             <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-light text-dark fs-6">Jumlah: <strong><?= $total ?></strong></span>
+                <span class="badge bg-primary fs-6 px-3 py-2">
+                    Jumlah Rekod: <strong><?= $total ?></strong>
+                </span>
                 
                 <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                    <button class="btn btn-light d-flex align-items-center gap-2 dropdown-toggle" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle fs-5"></i>
-                        <span><?= htmlspecialchars($_SESSION['username'] ?? 'Admin') ?></span>
+                        <span><?= htmlspecialchars($_SESSION['username'] ?? 'Pengguna') ?></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profil</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profil Saya</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Keluar</a></li>
                     </ul>
@@ -237,9 +198,11 @@ while($row = $result->fetch_assoc()){
 
     <!-- Search Card -->
     <div class="card mb-4">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-semibold"><i class="bi bi-funnel me-2"></i>Carian Lanjutan</h6>
-            <a href="add.php" class="btn btn-primary btn-sm rounded-pill px-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold text-secondary">
+                <i class="bi bi-funnel-fill me-2"></i>Carian Permohonan
+            </h6>
+            <a href="add.php" class="btn btn-primary rounded-pill px-4 py-2">
                 <i class="bi bi-plus-circle me-2"></i>Permohonan Baru
             </a>
         </div>
@@ -248,7 +211,7 @@ while($row = $result->fetch_assoc()){
                 <div class="col-md-3">
                     <div class="form-floating">
                         <input type="text" name="no_id" class="form-control" id="no_id" placeholder="Custom ID" value="<?= htmlspecialchars($no_id) ?>">
-                        <label for="no_id">Custom ID (Exact)</label>
+                        <label for="no_id">Custom ID (No Utama - Exact)</label>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -271,8 +234,8 @@ while($row = $result->fetch_assoc()){
                 </div>
 
                 <!-- Status -->
-                <div class="col-12">
-                    <label class="form-label fw-semibold text-muted">Status</label>
+                <div class="col-12 mt-2">
+                    <label class="form-label fw-semibold text-muted mb-2">Status</label>
                     <div class="d-flex flex-wrap gap-2">
                         <?php
                         $statusArr = [
@@ -300,7 +263,7 @@ while($row = $result->fetch_assoc()){
                 <div class="col-md-3">
                     <div class="form-floating">
                         <input type="date" name="periksa_mula" class="form-control" id="periksa_mula" value="<?= htmlspecialchars($periksa_mula) ?>">
-                        <label for="periksa_mula">Tarikh Periksa Dari</label>
+                        <label for="periksa_mula">Periksa Dari</label>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -312,7 +275,7 @@ while($row = $result->fetch_assoc()){
                 <div class="col-md-3">
                     <div class="form-floating">
                         <input type="date" name="mohon_mula" class="form-control" id="mohon_mula" value="<?= htmlspecialchars($mohon_mula) ?>">
-                        <label for="mohon_mula">Tarikh Mohon Dari</label>
+                        <label for="mohon_mula">Mohon Dari</label>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -322,12 +285,14 @@ while($row = $result->fetch_assoc()){
                     </div>
                 </div>
 
-                <div class="col-12 d-flex justify-content-end gap-2 pt-2">
+                <div class="col-12 d-flex justify-content-end gap-3 pt-3">
                     <button type="submit" class="btn btn-primary px-5">
                         <i class="bi bi-search me-2"></i>Cari
                     </button>
-                    <a href="senarai.php" class="btn btn-outline-secondary px-5">Kosongkan</a>
-                    <a href="index.php" class="btn btn-outline-primary px-5">Kembali Dashboard</a>
+                    <a href="senarai.php" class="btn btn-outline-secondary px-5">Kosongkan Carian</a>
+                    <a href="index.php" class="btn btn-outline-primary px-5">
+                        <i class="bi bi-house-door me-2"></i>Kembali Dashboard
+                    </a>
                 </div>
             </form>
         </div>
@@ -335,9 +300,9 @@ while($row = $result->fetch_assoc()){
 
     <!-- Table Card -->
     <div class="card">
-        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>Senarai Permohonan</h6>
-            <span class="text-muted">Jumlah rekod: <strong><?= $total ?></strong></span>
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">Hasil Carian</h6>
+            <span class="text-muted small">Jumlah rekod: <strong class="text-dark"><?= $total ?></strong></span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -360,8 +325,8 @@ while($row = $result->fetch_assoc()){
                         <?php foreach($rows as $row): ?>
                         <tr>
                             <?php
-                            $status = $row[2];
-                            $badgeClass = match(strtoupper($status)) {
+                            $status_val = $row[2];
+                            $badgeClass = match(strtoupper($status_val)) {
                                 'APPROVED' => 'bg-approved',
                                 'REJECTED' => 'bg-rejected',
                                 'CHECKED' => 'bg-checked',
@@ -371,7 +336,7 @@ while($row = $result->fetch_assoc()){
                                 'ACTIVE' => 'bg-active',
                                 default => 'bg-belum',
                             };
-                            $row[2] = "<span class='status-badge $badgeClass'>$status</span>";
+                            $row[2] = "<span class='status-badge $badgeClass'>$status_val</span>";
                             foreach($row as $cell) echo "<td>$cell</td>";
                             ?>
                         </tr>
