@@ -82,7 +82,7 @@ while($row = $result->fetch_assoc()){
         htmlspecialchars($row['no_petak'] ?: '(tiada)'),
         htmlspecialchars($row['lokasi_jalan'] ?: '(tiada)'),
         htmlspecialchars($row['alamat_taman'] ?: '(tiada)'),
-        '<a href="view.php?id='.$row['id'].'" class="btn btn-sm btn-info me-1"><i class="bi bi-eye"></i></a>
+        '<a href="view.php?id='.$row['id'].'" class="btn btn-sm btn-primary me-1"><i class="bi bi-eye"></i></a>
          <a href="delete.php?id='.$row['id'].'" class="btn btn-sm btn-danger" onclick="return confirm(\'Anda pasti mahu padam rekod ini?\')"><i class="bi bi-trash"></i></a>'
     ];
 }
@@ -92,124 +92,187 @@ while($row = $result->fetch_assoc()){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senarai Permohonan</title>
+    <title>Senarai Permohonan - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.bootstrap5.css" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
+        }
         body {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: #f8fafc;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        .sidebar {
+            background: #1e2937;
+            color: #f1f5f9;
             min-height: 100vh;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            position: fixed;
+            width: 260px;
+            z-index: 100;
+        }
+        .sidebar .nav-link {
+            color: #cbd5e1;
+            padding: 0.75rem 1.25rem;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: #334155;
+            color: white;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 1.5rem;
+        }
+        .top-navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            z-index: 90;
         }
         .card {
             border: none;
             border-radius: 16px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
         }
-        .search-header {
-            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            border-radius: 16px 16px 0 0;
-            padding: 1.25rem 1.5rem;
-        }
-        .infografik-input {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 1rem;
-            transition: all 0.3s;
-        }
-        .infografik-input:hover {
-            background: white;
-            box-shadow: 0 4px 15px rgba(13,110,253,0.15);
-        }
-        .table {
-            font-size: 0.9rem;
+        .card:hover {
+            transform: translateY(-3px);
         }
         .table th {
-            font-size: 0.85rem;
-            background: #0d6efd;
-            color: white;
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
             text-align: center;
             vertical-align: middle;
         }
-        .table td {
-            vertical-align: middle;
-        }
         .status-badge {
-            padding: 0.4em 0.9em;
-            border-radius: 50px;
-            font-size: 0.85rem;
+            padding: 0.35em 0.85em;
+            border-radius: 9999px;
+            font-size: 0.8rem;
             font-weight: 600;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
-        .bg-belum { background: #6c757d; color: white; }
-        .bg-checked { background: #17a2b8; color: white; }
-        .bg-endorsed { background: #6f42c1; color: white; }
-        .bg-approved { background: #28a745; color: white; }
-        .bg-rejected { background: #dc3545; color: white; }
-        .bg-kiv { background: #ffc107; color: black; }
-        .bg-incomplete { background: #fd7e14; color: white; }
-        .bg-active { background: #007bff; color: white; }
-        .btn-search {
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            border-radius: 50px;
+        .bg-belum { background: #64748b; color: white; }
+        .bg-checked { background: #06b6d4; color: white; }
+        .bg-endorsed { background: #7c3aed; color: white; }
+        .bg-approved { background: #10b981; color: white; }
+        .bg-rejected { background: #ef4444; color: white; }
+        .bg-kiv { background: #f59e0b; color: black; }
+        .bg-incomplete { background: #f97316; color: white; }
+        .bg-active { background: #3b82f6; color: white; }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+        }
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 8px !important;
         }
     </style>
 </head>
 <body>
-<div class="container py-5">
-    <!-- Card Carian Compact & Menarik -->
-    <div class="card shadow border-0 rounded-4 mb-5">
-        <div class="search-header d-flex justify-content-between align-items-center">
+
+<!-- Sidebar -->
+<div class="sidebar d-none d-md-block">
+    <div class="p-4 border-bottom border-secondary">
+        <h4 class="fw-bold text-white mb-0"><i class="bi bi-building me-2"></i>Admin Panel</h4>
+    </div>
+    <ul class="nav flex-column pt-3">
+        <li class="nav-item">
+            <a href="index.php" class="nav-link"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+        </li>
+        <li class="nav-item">
+            <a href="senarai.php" class="nav-link active"><i class="bi bi-list-ul me-2"></i> Senarai Permohonan</a>
+        </li>
+        <li class="nav-item">
+            <a href="add.php" class="nav-link"><i class="bi bi-plus-circle me-2"></i> Permohonan Baru</a>
+        </li>
+        <li class="nav-item mt-4">
+            <a href="#" class="nav-link"><i class="bi bi-gear me-2"></i> Tetapan</a>
+        </li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Top Navbar -->
+    <nav class="top-navbar navbar navbar-expand-lg navbar-light px-4 py-3 rounded-4 mb-4">
+        <div class="container-fluid">
             <div class="d-flex align-items-center">
-                <i class="bi bi-search fs-4 me-3"></i>
-                <h5 class="mb-0 fw-bold">Carian Permohonan</h5>
+                <button class="navbar-toggler d-md-none me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <h5 class="mb-0 fw-semibold text-secondary">Senarai Permohonan</h5>
             </div>
-            <a href="add.php" class="btn btn-light btn-md shadow rounded-pill px-4">
-                <i class="bi bi-plus-circle me-2"></i> Permohonan Baru
+            
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-light text-dark fs-6">Jumlah: <strong><?= $total ?></strong></span>
+                
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-5"></i>
+                        <span><?= htmlspecialchars($_SESSION['username'] ?? 'Admin') ?></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profil</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Keluar</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Search Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold"><i class="bi bi-funnel me-2"></i>Carian Lanjutan</h6>
+            <a href="add.php" class="btn btn-primary btn-sm rounded-pill px-4">
+                <i class="bi bi-plus-circle me-2"></i>Permohonan Baru
             </a>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body">
             <form method="GET" class="row g-3">
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="text" name="no_id" class="form-control" id="no_id" placeholder="Custom ID (No Utama)" value="<?= htmlspecialchars($no_id) ?>">
-                            <label for="no_id">Custom ID (No Utama - Exact)</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" name="no_id" class="form-control" id="no_id" placeholder="Custom ID" value="<?= htmlspecialchars($no_id) ?>">
+                        <label for="no_id">Custom ID (Exact)</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="text" name="syarikat" class="form-control" id="syarikat" placeholder="Nama Syarikat" value="<?= htmlspecialchars($syarikat) ?>">
-                            <label for="syarikat">Nama Syarikat</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" name="syarikat" class="form-control" id="syarikat" placeholder="Nama Syarikat" value="<?= htmlspecialchars($syarikat) ?>">
+                        <label for="syarikat">Nama Syarikat</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="text" name="jalan" class="form-control" id="jalan" placeholder="Nama Jalan" value="<?= htmlspecialchars($jalan) ?>">
-                            <label for="jalan">Nama Jalan</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" name="jalan" class="form-control" id="jalan" placeholder="Nama Jalan" value="<?= htmlspecialchars($jalan) ?>">
+                        <label for="jalan">Nama Jalan</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="text" name="taman" class="form-control" id="taman" placeholder="Nama Taman" value="<?= htmlspecialchars($taman) ?>">
-                            <label for="taman">Nama Taman</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" name="taman" class="form-control" id="taman" placeholder="Nama Taman" value="<?= htmlspecialchars($taman) ?>">
+                        <label for="taman">Nama Taman</label>
                     </div>
                 </div>
+
                 <!-- Status -->
                 <div class="col-12">
-                    <label class="form-label fw-bold text-muted mb-2">Status</label>
+                    <label class="form-label fw-semibold text-muted">Status</label>
                     <div class="d-flex flex-wrap gap-2">
                         <?php
                         $statusArr = [
@@ -232,72 +295,57 @@ while($row = $result->fetch_assoc()){
                         ?>
                     </div>
                 </div>
+
                 <!-- Tarikh -->
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="date" name="periksa_mula" class="form-control" id="periksa_mula" value="<?= htmlspecialchars($periksa_mula) ?>">
-                            <label for="periksa_mula">Periksa Dari</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="date" name="periksa_mula" class="form-control" id="periksa_mula" value="<?= htmlspecialchars($periksa_mula) ?>">
+                        <label for="periksa_mula">Tarikh Periksa Dari</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="date" name="periksa_tamat" class="form-control" id="periksa_tamat" value="<?= htmlspecialchars($periksa_tamat) ?>">
-                            <label for="periksa_tamat">Hingga</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="date" name="periksa_tamat" class="form-control" id="periksa_tamat" value="<?= htmlspecialchars($periksa_tamat) ?>">
+                        <label for="periksa_tamat">Hingga</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="date" name="mohon_mula" class="form-control" id="mohon_mula" value="<?= htmlspecialchars($mohon_mula) ?>">
-                            <label for="mohon_mula">Mohon Dari</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="date" name="mohon_mula" class="form-control" id="mohon_mula" value="<?= htmlspecialchars($mohon_mula) ?>">
+                        <label for="mohon_mula">Tarikh Mohon Dari</label>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="infografik-input">
-                        <div class="form-floating">
-                            <input type="date" name="mohon_tamat" class="form-control" id="mohon_tamat" value="<?= htmlspecialchars($mohon_tamat) ?>">
-                            <label for="mohon_tamat">Hingga</label>
-                        </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="date" name="mohon_tamat" class="form-control" id="mohon_tamat" value="<?= htmlspecialchars($mohon_tamat) ?>">
+                        <label for="mohon_tamat">Hingga</label>
                     </div>
                 </div>
-                <!-- Butang -->
-                <div class="col-12 d-flex justify-content-end gap-3 mt-4 flex-wrap">
-                    <button type="submit" class="btn btn-primary btn-md px-5 rounded-pill">
+
+                <div class="col-12 d-flex justify-content-end gap-2 pt-2">
+                    <button type="submit" class="btn btn-primary px-5">
                         <i class="bi bi-search me-2"></i>Cari
                     </button>
-                    <a href="senarai.php" class="btn btn-outline-secondary btn-md px-5 rounded-pill">
-                        <i class="bi bi-x-circle me-2"></i>Kosongkan
-                    </a>
-                    <a href="index.php" class="btn btn-outline-primary btn-md px-5 rounded-pill">
-                        <i class="bi bi-house-door-fill me-2"></i>Kembali ke Halaman Utama
-                    </a>
+                    <a href="senarai.php" class="btn btn-outline-secondary px-5">Kosongkan</a>
+                    <a href="index.php" class="btn btn-outline-primary px-5">Kembali Dashboard</a>
                 </div>
             </form>
         </div>
     </div>
-    <!-- Table senarai -->
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center p-3">
-            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Senarai Permohonan</h5>
-            <div class="d-flex align-items-center gap-3">
-                <h6 class="mb-0">Jumlah Rekod: <span class="badge bg-light text-dark fs-6"><?= $total ?></span></h6>
-                <a href="index.php" class="btn btn-outline-light btn-sm rounded-pill px-3">
-                    <i class="bi bi-house-door me-1"></i>Ke Dashboard
-                </a>
-            </div>
+
+    <!-- Table Card -->
+    <div class="card">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>Senarai Permohonan</h6>
+            <span class="text-muted">Jumlah rekod: <strong><?= $total ?></strong></span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table id="searchTable" class="table table-hover table-bordered table-striped mb-0">
-                    <thead class="table-dark">
+                <table id="searchTable" class="table table-hover mb-0 align-middle">
+                    <thead>
                         <tr>
                             <th class="text-center">Bil</th>
-                            <th>Custom ID (No Utama)</th>
+                            <th>Custom ID</th>
                             <th>Status</th>
                             <th>Nama Syarikat</th>
                             <th>Tarikh Mohon</th>
@@ -334,6 +382,7 @@ while($row = $result->fetch_assoc()){
         </div>
     </div>
 </div>
+
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -346,6 +395,7 @@ while($row = $result->fetch_assoc()){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.print.min.js"></script>
+
 <script>
 $(document).ready(function() {
     $('#searchTable').DataTable({
@@ -363,7 +413,7 @@ $(document).ready(function() {
         responsive: true,
         pageLength: 15,
         lengthMenu: [10, 15, 25, 50, 100],
-        order: [[8, 'asc']] // Urut ikut Taman
+        order: [[8, 'asc']]
     });
 });
 </script>
