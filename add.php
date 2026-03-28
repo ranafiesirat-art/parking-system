@@ -116,7 +116,7 @@ if (isset($_POST['submit'])) {
             padding-bottom: 0.75rem;
             border-bottom: 2px solid #e2e8f0;
         }
-        .form-section {
+        .info-card {
             background: #f8fafc;
             border-radius: 12px;
             padding: 1.75rem;
@@ -125,11 +125,6 @@ if (isset($_POST['submit'])) {
         }
         .form-control, .form-select {
             border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            padding: 0.75rem 1rem;
-        }
-        .form-floating > label {
-            color: #64748b;
         }
         #nilai_sewa {
             font-weight: 700;
@@ -140,13 +135,6 @@ if (isset($_POST['submit'])) {
         .btn-primary {
             background: var(--primary-color);
             border-color: var(--primary-color);
-        }
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
-        .alert {
-            border-radius: 12px;
         }
     </style>
 </head>
@@ -160,7 +148,7 @@ if (isset($_POST['submit'])) {
                 <!-- Header -->
                 <div class="d-flex align-items-center justify-content-between mb-4">
                     <div>
-                        <h3 class="fw-semibold text-dark mb-0">
+                        <h3 class="fw-semibold text-dark mb-1">
                             <i class="bi bi-plus-circle-fill me-3 text-primary"></i>
                             Tambah Permohonan Baru
                         </h3>
@@ -193,12 +181,14 @@ if (isset($_POST['submit'])) {
                         <?php if ($duplicate_error): ?>
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                ID Permohonan (<strong><?= htmlspecialchars($custom_id) ?></strong>) telah wujud. Sila gunakan ID lain.
+                                ID Permohonan telah wujud. Sila gunakan ID lain.
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         <?php endif; ?>
 
                         <form method="POST" id="addForm">
+
+                            <!-- Maklumat Asas -->
                             <div class="row g-4 mb-4">
                                 <div class="col-md-6">
                                     <div class="form-floating">
@@ -224,13 +214,31 @@ if (isset($_POST['submit'])) {
                             </div>
 
                             <!-- Maklumat Pemohon -->
-                            <div class="form-section">
+                            <div class="info-card">
                                 <div class="section-title">Maklumat Pemohon</div>
-                                <div class="row g-4">
+                                <div class="row g-3">
                                     <div class="col-12">
                                         <div class="form-floating">
                                             <input type="text" name="syarikat" class="form-control" id="syarikat" required>
                                             <label for="syarikat">Nama Syarikat / Organisasi *</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="alamat_no" class="form-control" id="alamat_no" placeholder="No">
+                                            <label for="alamat_no">No</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" name="alamat_jalan" class="form-control" id="alamat_jalan">
+                                            <label for="alamat_jalan">Jalan</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" name="alamat_taman" class="form-control" id="alamat_taman">
+                                            <label for="alamat_taman">Taman / Kawasan</label>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -245,14 +253,32 @@ if (isset($_POST['submit'])) {
                                             <label for="no_tel">No Telefon</label>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" name="lesen" class="form-control" id="lesen">
+                                            <label for="lesen">Lesen MBJB</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" name="ssm" class="form-control" id="ssm">
+                                            <label for="ssm">No SSM</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-floating">
+                                            <input type="text" name="doc" class="form-control" id="doc">
+                                            <label for="doc">Dokumen Sokongan</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Maklumat Petak & Sewa -->
-                            <div class="form-section">
-                                <div class="section-title">Maklumat Petak & Sewa</div>
-                                <div class="row g-4">
-                                    <div class="col-md-6">
+                            <!-- Maklumat Petak & Sewaan -->
+                            <div class="info-card">
+                                <div class="section-title">Maklumat Petak & Sewaan</div>
+                                <div class="row g-3">
+                                    <div class="col-12">
                                         <div class="form-floating">
                                             <input type="text" name="lokasi_jalan" class="form-control" id="lokasi_jalan">
                                             <label for="lokasi_jalan">Lokasi Jalan</label>
@@ -264,10 +290,7 @@ if (isset($_POST['submit'])) {
                                             <label for="no_petak">No Petak</label>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="row g-4 mt-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <div class="form-floating">
                                             <select name="bil_petak" id="bil_petak" class="form-select" required>
                                                 <option value="0">Pilih Bilangan</option>
@@ -278,7 +301,7 @@ if (isset($_POST['submit'])) {
                                             <label>Bilangan Petak Dimohon *</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <div class="form-floating">
                                             <select name="tempoh" id="tempoh" class="form-select" required>
                                                 <option value="">Pilih Tempoh</option>
@@ -288,74 +311,23 @@ if (isset($_POST['submit'])) {
                                             <label>Tempoh Sewa *</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <div class="form-floating">
                                             <input type="date" name="tarikh_mohon" class="form-control" id="tarikh_mohon" value="<?= date('Y-m-d') ?>">
                                             <label for="tarikh_mohon">Tarikh Mohon</label>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div class="mt-4">
-                                    <div class="form-floating">
-                                        <input type="text" id="nilai_sewa" class="form-control" readonly value="RM 0.00">
-                                        <label>Anggaran Nilai Sewaan (RM)</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Lesen & Sokongan -->
-                            <div class="form-section">
-                                <div class="section-title">Maklumat Lesen & Sokongan</div>
-                                <div class="row g-4">
-                                    <div class="col-md-4">
+                                    <div class="col-12">
                                         <div class="form-floating">
-                                            <input type="text" name="lesen" class="form-control" id="lesen">
-                                            <label for="lesen">Lesen MBJB</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-floating">
-                                            <input type="text" name="ssm" class="form-control" id="ssm">
-                                            <label for="ssm">No SSM</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-floating">
-                                            <input type="text" name="doc" class="form-control" id="doc">
-                                            <label for="doc">Dokumen Sokongan</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Alamat -->
-                            <div class="form-section">
-                                <div class="section-title">Alamat Pemohon</div>
-                                <div class="row g-4">
-                                    <div class="col-md-4">
-                                        <div class="form-floating">
-                                            <input type="text" name="alamat_no" class="form-control" id="alamat_no">
-                                            <label for="alamat_no">No</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-floating">
-                                            <input type="text" name="alamat_jalan" class="form-control" id="alamat_jalan">
-                                            <label for="alamat_jalan">Jalan</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-floating">
-                                            <input type="text" name="alamat_taman" class="form-control" id="alamat_taman">
-                                            <label for="alamat_taman">Taman / Kawasan</label>
+                                            <input type="text" id="nilai_sewa" class="form-control" readonly value="RM 0.00">
+                                            <label>Anggaran Nilai Sewaan (RM)</label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Pegawai Bertanggungjawab -->
-                            <div class="form-section">
+                            <div class="info-card">
                                 <div class="section-title">Pegawai Bertanggungjawab</div>
                                 <div class="col-md-8">
                                     <div class="form-floating">
@@ -403,9 +375,7 @@ function kiraNilai() {
 
 document.getElementById('bil_petak').addEventListener('change', kiraNilai);
 document.getElementById('tempoh').addEventListener('change', kiraNilai);
-
-// Jalankan sekali semasa page load
-kiraNilai();
+kiraNilai(); // Jalankan sekali pada load
 </script>
 
 </body>
