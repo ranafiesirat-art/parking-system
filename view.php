@@ -290,7 +290,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
                         <!-- Maklumat Pemeriksaan -->
                         <div class="info-card">
-                            <div class="section-title">Maklumat Pemeriksaan</div>
+                            <div class="section-title">Maklumat Pemeriksaan Pegawai di Tapak</div>
                             <div class="row g-3">
                                 <div class="col-md-6"><span class="detail-label">Tarikh Periksa</span><br><span class="detail-value"><?= formatTarikh($data['tarikh_periksa']) ?></span></div>
                                 <div class="col-md-6"><span class="detail-label">Respon Hari Ke</span><br><span class="detail-value"><?= $responHariKe ?></span></div>
