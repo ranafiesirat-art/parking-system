@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="text-center mt-4">
-            <small class="text-muted">Sistem Parking & Mileage Jabatan</small>
+            <small class="text-muted">Sistem Parking & Mileage Seksyen</small>
         </div>
     </div>
 </div>
